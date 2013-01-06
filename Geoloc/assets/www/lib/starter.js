@@ -5,7 +5,8 @@
 $(document).ready( function() {
 
     document.addEventListener("deviceready", systemReady, true);
-
+	/* On va modifier tout cela pour que cela roule avec nodejs et Drupal */
+	
     function systemReady(){ // Le système est prêt.
 
 	var watch_id = null;    // ID of the geolocation
