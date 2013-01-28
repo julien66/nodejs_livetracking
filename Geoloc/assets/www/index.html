@@ -6,11 +6,12 @@
 <title>FFVL Géoloc</title> 
 <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
 <script type="text/javascript" charset="utf-8" src="cordova-2.1.0.js"></script> 
-<script type="text/javascript" src="http://maps.googleapis.com/maps/api/js?key=AIzaSyD0j7HUREhDcBlyvPwkLD8ICsfelgoLSIE&sensor=false"></script>
-<script src='lib/jquery-1.8.3.min.js' type='text/javascript'></script>
-<script src='lib/jquery.mobile-1.2.0/jquery.mobile-1.2.0.js' type='text/javascript'></script>
-<script src='lib/json2.js' type='text/javascript'></script>
-<script src='lib/starter.js' type='text/javascript'></script>
+<script type="text/javascript" src="websocket.js"> </script>
+<script type='text/javascript' src='lib/jquery-1.8.3.min.js'></script>
+<script type='text/javascript' src='lib/jquery.mobile-1.2.0/jquery.mobile-1.2.0.js'></script>
+<script type='text/javascript' src='lib/json2.js'></script>
+<script type='text/javascript' src='lib/starter.js'></script>
+<script type='text/javascript' src='http://maps.googleapis.com/maps/api/js?key=AIzaSyD0j7HUREhDcBlyvPwkLD8ICsfelgoLSIE&sensor=false'></script>
 
 <link href="http://code.google.com/apis/maps/documentation/javascript/examples/default.css" rel="stylesheet" type="text/css" />
 <link rel='stylesheet' type='text/css' href='lib/jquery.mobile-1.2.0/jquery.mobile-1.2.0.css' />
@@ -32,13 +33,15 @@
   </div> <!-- Header -->
 
   <div data-role="content">
-     Bien venu sur l'application (TEST !) de tracking de la Fédération Française de Vol Libre.
-     <button id="home_clearstorage_button">Effacer le stockage local</button>
+     Bienvenue sur l'application de tracking de la Fédération Française de Vol Libre. <br/><br/>
+     Votre identifiant trackeur est le : <span id="idTrack"> </span>. Cet identifiant doit être renseigné sur votre page personnelle du site tracking.ffvl.fr 
+     <button id="home_clearstorage_button">Effacer toutes les traces</button>
   </div>
   
    <div data-role="footer" data-position="fixed" class="ui-bar" data-id="statebar">
 	<a class="internet" href="#" data-role="button" data-theme="e" data-icon="delete">Internet</a>
 	<a class="isTracking" href="#" data-role="button" data-theme="e" data-icon="delete">Tracking</a>
+	<a class="ffvl" href="#" data-role="button" data-theme="e" data-icon="delete">FFVL</a>
   </div>
   
 </div> <!-- Page -->
@@ -58,10 +61,6 @@
 
   <div data-role="content">
     <p id="startTracking_status"></p>
-      <div data-role="fieldcontain" class="ui-hide-label">
-        <label for="track_id">CIVL ID</label>
-        <input type="text" name="civl_id" id="civl_id" placeholder="Entrez votre identifiant CIVL (CIVL ID)"/>
-      </div>
     <button data-role="button" id="startTracking_start">Commencer le Tracking</button>
     <button data-role="button" id="startTracking_stop">Arrêter le Tracking</button>
         <p id="startTracking_debug"></p>
@@ -70,6 +69,7 @@
   <div data-role="footer" data-position="fixed" class="ui-bar" data-id="statebar">
 	<a class="internet" href="#" data-role="button" data-theme="e" data-icon="delete">Internet</a>
 	<a class="isTracking" href="#" data-role="button" data-theme="e" data-icon="delete">Tracking</a>
+	<a class="ffvl" href="#" data-role="button" data-theme="e" data-icon="delete">FFVL</a>
   </div>
   	
 </div>
@@ -89,13 +89,14 @@
 
   <div data-role="content">
 	<p id="tracks_recorded"></p>
-        <ul data-role="listview" id="history_tracklist">
-        </ul>
+        <ol data-role="listview" id="history_tracklist">
+        </ol>
   </div>
   
   <div data-role="footer" data-position="fixed" class="ui-bar" data-id="statebar">
 	<a class="internet" href="#" data-role="button" data-theme="e" data-icon="delete">Internet</a>
 	<a class="isTracking" href="#" data-role="button" data-theme="e" data-icon="delete">Tracking</a>
+	<a class="ffvl" href="#" data-role="button" data-theme="e" data-icon="delete">FFVL</a>
   </div>
   	
 </div>
