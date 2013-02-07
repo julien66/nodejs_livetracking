@@ -52,7 +52,7 @@ $(document).ready( function() {
 
 	function connectSocket(){
 		// Lance la connection au socket.
-		iosocket = io.connect("http://188.165.192.213:8080");
+		iosocket = io.connect("http://91.121.133.40:8080");
  		iosocket.on('connect', function () {
 			// Gère la connection à nodejs.
 			nodejs = true;
@@ -236,7 +236,7 @@ $(document).ready( function() {
 	}
 
 	function loadIO(){
-		$.getScript("http://188.165.192.213:8080/socket.io/socket.io.js", function(data, textStatus, jqxhr) {	
+		$.getScript("http://91.121.133.40:8080/socket.io/socket.io.js", function(data, textStatus, jqxhr) {	
 			ioFile = true;
 			connectSocket();
 		});
