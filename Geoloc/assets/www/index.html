@@ -6,12 +6,13 @@
 <title>FFVL Géoloc</title> 
 <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
 <script type="text/javascript" charset="utf-8" src="cordova-2.1.0.js"></script> 
-<script type="text/javascript" src="websocket.js"> </script>
+<!-- <script type="text/javascript" src="websocket.js"> </script> -->
 <script type='text/javascript' src='lib/jquery-1.8.3.min.js'></script>
 <script type='text/javascript' src='lib/jquery.mobile-1.2.0/jquery.mobile-1.2.0.js'></script>
 <script type='text/javascript' src='lib/json2.js'></script>
 <script type='text/javascript' src='lib/starter.js'></script>
 <script type='text/javascript' src='http://maps.googleapis.com/maps/api/js?key=AIzaSyD0j7HUREhDcBlyvPwkLD8ICsfelgoLSIE&sensor=false'></script>
+<link rel='stylesheet' type='text/css' href='lib/ffvl.css' />
 
 <link href="http://code.google.com/apis/maps/documentation/javascript/examples/default.css" rel="stylesheet" type="text/css" />
 <link rel='stylesheet' type='text/css' href='lib/jquery.mobile-1.2.0/jquery.mobile-1.2.0.css' />
@@ -25,7 +26,7 @@
     <h1>Accueil</h1>
     <div data-role="navbar">
       <ul>
-        <li><a href="#accueil" data-transition="none" data-icon="home">Accueil</a></li>
+        <li><a class="ui-btn-active  ui-state-persist" href="#accueil" data-transition="none" data-icon="home">Accueil</a></li>
         <li><a href="#startTracking" data-transition="none" data-icon="plus">Track</a></li>
         <li><a href="#history" data-transition="none" data-icon="star">Historique</a></li>
       </ul>
@@ -33,9 +34,8 @@
   </div> <!-- Header -->
 
   <div data-role="content">
-     Bienvenue sur l'application de tracking de la Fédération Française de Vol Libre. <br/><br/>
-     Votre identifiant trackeur est le : <span id="idTrack"> </span>. Cet identifiant doit être renseigné sur votre page personnelle du site tracking.ffvl.fr 
-     <button id="home_clearstorage_button">Effacer toutes les traces</button>
+     <span class="logo"><img style='width:100px;' alt='logo' src='lib/logo.png'></span><h4>Bienvenue sur l'application de tracking de la Fédération Française de Vol Libre. </h4><br/>
+     <b>Votre identifiant trackeur est le : <span id="idTrack"> </span></b>. Cet identifiant doit être renseigné sur votre page personnelle du site tracking.ffvl.fr 
   </div>
   
    <div data-role="footer" data-position="fixed" class="ui-bar" data-id="statebar">
@@ -53,7 +53,7 @@
     <div data-role="navbar">
       <ul>
         <li><a href="#accueil" data-transition="none" data-icon="home">Accueil</a></li>
-        <li><a href="#startTracking" data-transition="none" data-icon="plus">Track</a></li>
+        <li><a class="ui-btn-active  ui-state-persist" href="#startTracking" data-transition="none" data-icon="plus">Track</a></li>
         <li><a href="#history" data-transition="none" data-icon="star">Historique</a></li>
       </ul>
     </div>
@@ -61,8 +61,9 @@
 
   <div data-role="content">
     <p id="startTracking_status"></p>
-    <button data-role="button" id="startTracking_start">Commencer le Tracking</button>
-    <button data-role="button" id="startTracking_stop">Arrêter le Tracking</button>
+    <button data-role="button" id="startTracking_start" data-theme="e">Commencer le Tracking</button>
+    <button data-role="button" id="startTracking_stop" data-theme="b">Arrêter le Tracking</button>
+    <button data-role="button" id="startTracking_ghost" data-theme="b">Activer le mode fantôme</button>
         <p id="startTracking_debug"></p>
   </div>
   
@@ -82,12 +83,13 @@
       <ul>
         <li><a href="#accueil" data-transition="none" data-icon="home">Accueil</a></li>
         <li><a href="#startTracking" data-transition="none" data-icon="plus">Track</a></li>
-        <li><a href="#history" data-transition="none" data-icon="star">Historique</a></li>
+        <li><a class="ui-btn-active  ui-state-persist" href="#history" data-transition="none" data-icon="star">Historique</a></li>
       </ul>
     </div>
   </div>
 
   <div data-role="content">
+	<button id="home_clearstorage_button" data-theme="e">Effacer toutes les traces</button>
 	<p id="tracks_recorded"></p>
         <ol data-role="listview" id="history_tracklist">
         </ol>
@@ -109,7 +111,7 @@
       <ul>
         <li><a href="#accueil" data-transition="none" data-icon="home">Accueil</a></li>
         <li><a href="#startTracking" data-transition="none" data-icon="plus">Track</a></li>
-        <li><a href="#history" data-transition="none" data-icon="star">Historique</a></li>
+        <li><a class="ui-btn-active  ui-state-persist" href="#history" data-transition="none" data-icon="star">Historique</a></li>
       </ul>
     </div>
   </div>
@@ -119,21 +121,11 @@
   </div>
 
  <div data-role="footer" data-position="fixed" class="ui-bar" data-id="statebar">
-	<a id="deleteIt" href="#history" data-role="button" data-theme="e" data-icon="trash">Effacer</a>
+	<a id="deleteIt" href="#" data-role="button" data-theme="e" data-icon="trash">Effacer</a>
 	<a id="sendIt" class="send" href="#" data-role="button" data-theme="e" data-icon="email">Envoyer</a>
   </div>
 
 </div>
-
-<!-- Send Dialog-->
-<!-- <div data-role="page" id="send">
-	<div data-role="content">
-	<h1>Envoyer la trace ?</h1>
-	<a id="sendIt" href="#history" data-role="button" data-theme="b" id="sendYes">Oui !</button>
-    	<a href="#history" data-role="button" id="sendNo">Non pas maintenant</button>
-  	</div>
-</div> -->
-
 </body>
  
  </html>

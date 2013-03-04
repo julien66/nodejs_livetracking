@@ -14,6 +14,6 @@ public class GeolocActivity extends DroidGap {
         super.onCreate(savedInstanceState);
         super.loadUrl("file:///android_asset/www/index.html");
         
-        this.appView.addJavascriptInterface(new WebSocketFactory(this), "WebSocketFactory");
+        //this.appView.addJavascriptInterface(new WebSocketFactory(this), "WebSocketFactory");
     }
 }

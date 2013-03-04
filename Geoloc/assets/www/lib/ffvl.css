@@ -1,0 +1,14 @@
+/** @css file by Julien Garcia **/
+
+.logo{
+ float: left;
+ margin:5px 10px 5px 0px;
+}
+
+#startTracking_status{
+	font-weight : bold;
+}
+
+#idTrack{
+	color:#ffcc33;
+}
