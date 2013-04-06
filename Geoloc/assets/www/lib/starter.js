@@ -28,6 +28,24 @@ $(document).ready( function() {
 	var iosocket;
 	var nodejs = false;
 
+	var lowBat = false;
+
+	// Listen to the battery !!
+	document.addEventListener("batterystatus", onBatteryStatus, false);
+	function onBatteryStatus(info) { // Handle the battery low event	
+		//console.log(info.level);
+		alert('test');
+		/*stopTracking();
+		vibrate(500);
+		navigator.notification.confirm(
+			'La batterie est faible et le tracking a donc été stopé pour économiser de la batterie !',
+			vibrate(500),
+			'Attention',
+			'OK'
+		);
+		lowBat = true;*/
+	}
+
 	// Listen to the connection !!
 	document.addEventListener("online", onOnline, false);
 	function onOnline() { 	    // Handle the online event
@@ -41,9 +59,9 @@ $(document).ready( function() {
 			connectSocket();
 		}
 
-		if (gmapFile == false){
+		/*if (gmapFile == false){
 			loadgMap(); // A reprendre !
-		}
+		}*/
 	    } // end if Internet == false
 	}
 
@@ -58,6 +76,7 @@ $(document).ready( function() {
 	function connectSocket(){
 		// Lance la connection au socket.
 		iosocket = io.connect("http://91.121.133.40:8080");
+	
  		iosocket.on('connect', function () {
 			// Gère la connection à nodejs.
 			nodejs = true;
@@ -75,16 +94,27 @@ $(document).ready( function() {
 			    contentTokens: undefined
 			};
 
-			iosocket.on('client-authenticated',function(message){ // Quand authentifié !
-				console.log("recu");
-				console.log(message);
+			iosocket.on('client-authenticated',function(){ // Quand authentifié !
+				//console.log("recu");
+				//console.log(message);
+				alert('auth !');
 			});
 
 			iosocket.emit('authenticate', authMessage);
 		});
 	}
 
-	$('#idTrack').html(device.uuid);
+	$('#geosite').live('tap', function(){
+		var url = $(this).attr("rel");
+		loadUrl(url);
+	});
+
+	function loadUrl(url){
+		navigator.app.loadUrl(url, {openExternal:true});
+		return false;
+	}
+
+	$('#idTrack').html(device.uuid); // Affiche la device uuid sur la page d'accueil.
 	
 
 	$("#home_clearstorage_button").live('click', function(){ // Réinitialiser le stockage local.
@@ -113,7 +143,12 @@ $(document).ready( function() {
 	function rebuild_track_list(){
 		 // Count the number of entries in localStorage and display this information to the user
 		  tracks_recorded = window.localStorage.length;
-		  $("#tracks_recorded").html("<strong>" + (tracks_recorded) + "</strong> Trace(s) enregistr&eacute;e(s)");
+		  if (tracks_recorded > 1){
+		  	$("#tracks_recorded").html("<strong>" + (tracks_recorded) + "</strong> Trace enregistrée");
+		  }
+		  else{
+			$("#tracks_recorded").html("<strong>" + (tracks_recorded) + "</strong> Traces enregistrées");
+		  } 
   		  // Empty the list of recorded tracks
   		  $("#history_tracklist").empty();
   		 // Iterate over all of the recorded tracks, populating the list
@@ -134,7 +169,27 @@ $(document).ready( function() {
   		key = $(this).attr("track_id"); // Récupère le numéro du vol.
   		data = JSON.parse(window.localStorage.getItem(key)); // Get Item and Turn the stringified data back into a JS object
 		$("#track_info div[data-role=header] h1").text(data[0]); // Update the Track Info page header to the track_id
-		var myLatLng;
+
+		// Total distance !
+		total_km = 0;
+		for(i = 0; i < data[1].length; i++){
+    			if(i == (data[1].length - 1)){
+        			break;
+    			}
+    			total_km += gps_distance(data[1][i].coords.latitude, data[1][i].coords.longitude, data[1][i+1].coords.latitude, data[1][i+1].coords.longitude);
+		}		
+		total_km_rounded = total_km.toFixed(2);
+		
+		// Total time travelled
+		start_time = new Date(data[1][0].timestamp).getTime();
+		end_time = new Date(data[1][data[1].length-1].timestamp).getTime();
+		milli = end_time - start_time;
+		seconds = Math.floor((milli / 1000) % 60);
+      		minutes = Math.floor((milli / (60 * 1000)) % 60);
+		
+		$("#track_info_info").html('Le vol du <strong> '+data[0]+' </strong> contient <strong>'+data[1].length+'</strong> points GPS parcourant <strong>' + total_km_rounded + '</strong> km en <strong>' + minutes + 'mn</strong> et <strong>' + seconds + 's</strong>');
+
+		/* var myLatLng;
 		// Set the initial Lat and Long of the Google Map
 		if (data[1].length > 0){
 			myLatLng = new google.maps.LatLng(data[1][0].coords.latitude,  data[1][0].coords.longitude);
@@ -164,26 +219,32 @@ $(document).ready( function() {
   		strokeWeight: 2
 		});
 		// Apply the line to the map
-		trackPath.setMap(map);
+		trackPath.setMap(map);*/
 	});		
 
 	
 	// When the user send the fullTrack to the server.
 	$('#sendIt').live('click',function(){ // Envoi à un service Drupal... /services-gettrack/gettrack/  ==> POSTGIS
+		// Ici tu dois affiher un throbber et/ou freezer jusqu'à ce que l'envoi soit ok ?! - Risqué -> Attention gestion erreur.
+
 		$.post("http://ks201694.kimsufi.com/services-gettrack/gettrack/"+device.uuid, {
 			log : data
 		},
 		function(result){
 			if (result == "CREATE OK"){
 				navigator.notification.alert(
-            				'La trace a bien été enregistré sur le serveur de la FFVL',  // message
+            				'La trace est bien enregistrée sur le serveur de la FFVL',  // message
             				vibrate(500),         // callback
             				'Merci',            // title
             				'OK'                  // buttonName
         			);
 			}
+			else{
+				console.log(result);
+			}
 		});		
 		//console.log(data[0].timestamp);
+		//console.log("touche");
 	});
 	
 	// When the user erase the fulltrack from the local storage.
@@ -221,6 +282,7 @@ $(document).ready( function() {
 
 	// When the user start the tracker.
 	$("#startTracking_start").live('click', function(){
+	if (lowBat == false){
 		if (watch_id == null){
 			startDate = new Date();
 			$("#startTracking_start").closest('.ui-btn').hide();
@@ -233,6 +295,15 @@ $(document).ready( function() {
 			$("#startTracking_status").html("Recherche GPS.");
 			watch_id = navigator.geolocation.watchPosition(onSuccess, onError, { timeout: 5000, maximumAge: 0,enableHighAccuracy: true });
 		}
+	}else{
+		navigator.notification.confirm(
+			'La batterie est trop basse pour activer le tracking',
+			vibrate(500),
+			'Attention',
+			'Ok'
+			);
+		
+	}
 	});
 
 	$("#startTracking_ghost").live('click', function(){ // When the user enable or disable ghost function
@@ -241,7 +312,7 @@ $(document).ready( function() {
 				"Le mode fantome continue d'envoyer votre position au serveur FFVL mais ne la communique pas publiquement sur le site. Voulez-vous activer ce mode ?", // message
 				 function(i){
 					if (i == 1){
-						$("#startTracking_ghost").text("Desactiver le mode fantome");
+						$("#startTracking_ghost").text("Désactiver le mode fantome");
 						$('#startTracking_ghost').button('refresh');
 						$("#startTracking_ghost").buttonMarkup({'theme':'e'});
 						ghost = true;
@@ -265,21 +336,7 @@ $(document).ready( function() {
 			'Voulez-vous vraiment arreter le tracking ?', // message
 			function(i){
 				if (i == 1){
-				if (typeof watch_id != 'function'){
-					navigator.geolocation.clearWatch(watch_id); // Clear geolocation.
-					var dat = startDate.getDate().toString() + "/"+ (startDate.getMonth()+1).toString() + "/"+startDate.getFullYear().toString()+" "+startDate.getHours().toString()+":"+(startDate.getMinutes()<10?'0':'') + startDate.getMinutes();
-					window.localStorage.setItem( window.localStorage.length.toString() , JSON.stringify([dat, tracking_data]) ); // Trace stockée.
-					$("#startTracking_start").closest('.ui-btn').show();
-					$("#startTracking_stop").closest('.ui-btn').hide();
-					$('#startTracking_ghost').closest('.ui-btn').hide();
-					$("#startTracking_status").html("");
-					if (track == true){
-						$(".isTracking").buttonMarkup({'theme':'e', 'icon':'delete'});
-						track = false;
-					}
-					watch_id = null;			
-					tracking_data = [];
-				}
+					stopTracking();	
 				}
 			}, // callabck
 			'Attention',
@@ -300,13 +357,13 @@ $(document).ready( function() {
 			window.localStorage.setItem( (window.localStorage.length -1).toString(), JSON.stringify([dat, tracking_data])  ); // Test keep every single point to local storage !!
 		}*/
 		if (tracking_data.length < 3){
-			$("#startTracking_status").html("Recherche GPS... V&eacute;rifiez que le GPS soit activ&eacute; et qu'il recoive bien un signal");
+			$("#startTracking_status").html("Recherche GPS... Vérifiez que le GPS soit activé et qu'il recoive bien un signal");
 			if (track == false){
 				track = true;
 			}
 		}
 		else{
-			$("#startTracking_status").html(tracking_data.length+" point(s) ont &eacute;t&eacute; enregistr&eacute;e(s)<br> Le trackeur fonctionne normalement.");
+			$("#startTracking_status").html(tracking_data.length+" point(s) ont été enregistré(s)<br> Le trackeur fonctionne normalement.");
 			$(".isTracking").buttonMarkup({'theme':'b', 'icon':'check'});
 		}
 		
@@ -323,14 +380,14 @@ $(document).ready( function() {
 			};
 			iosocket.emit('message', posMessage);		
 		}
-    	  	console.log('Latitude: '          + position.coords.latitude          + '\n' +
+    	  	/*console.log('Latitude: '          + position.coords.latitude          + '\n' +
           'Longitude: '         + position.coords.longitude         + '\n' +
           'Altitude: '          + position.coords.altitude          + '\n' +
           'Accuracy: '          + position.coords.accuracy          + '\n' +
           'Altitude Accuracy: ' + position.coords.altitudeAccuracy  + '\n' +
           'Heading: '           + position.coords.heading           + '\n' +
           'Speed: '             + position.coords.speed             + '\n' +
-          'Timestamp: '         + position.timestamp                + '\n');
+          'Timestamp: '         + position.timestamp                + '\n');*/
 	};
 
 	// onError Callback receives a PositionError object
@@ -338,12 +395,12 @@ $(document).ready( function() {
 	function onError(error) {
     		/*alert('code: '    + error.code    + '\n' +
           	'message: ' + error.message + '\n');*/
-		console.log("Position foire&eacute;e... " + error);
+		//console.log("Position foire&eacute;e... " + error);
 		if (track == true){
 			$(".isTracking").buttonMarkup({ 'theme': "e", 'icon':"delete" });
 			track = false;
 		}
-		$("#startTracking_status").html(tracking_data.length+" point(s) ont &eacute;t&eacute; enregistr&eacute;e(s). Le trackeur a &eacute;chou&eacute; en enregistrant le dernier point. V&eacute;rifiez le GPS (fonctionnement et reception)");
+		$("#startTracking_status").html(tracking_data.length+" point(s) ont été enregistré(s). Le trackeur a échoué en enregistrant le dernier point. Vérifiez le GPS (fonctionnement et reception)");
 	}
 
 	function loadIO(){
@@ -353,14 +410,43 @@ $(document).ready( function() {
 		});
     	}
 
-	function loadgMap(){
-/*$.getScript("http://maps.googleapis.com/maps/api/js?key=AIzaSyD0j7HUREhDcBlyvPwkLD8ICsfelgoLSIE&sensor=false", function(data, textStatus, jqxhr) {	
+	function stopTracking(){
+		navigator.geolocation.clearWatch(watch_id); // Clear geolocation.
+		var dat = startDate.getDate().toString() + "/"+ (startDate.getMonth()+1).toString() + "/"+startDate.getFullYear().toString()+" "+startDate.getHours().toString()+":"+(startDate.getMinutes()<10?'0':'') + startDate.getMinutes();
+		window.localStorage.setItem( window.localStorage.length.toString() , JSON.stringify([dat, tracking_data]) ); // Trace stockée.
+		$("#startTracking_start").closest('.ui-btn').show();
+		$("#startTracking_stop").closest('.ui-btn').hide();
+		$('#startTracking_ghost').closest('.ui-btn').hide();
+		$("#startTracking_status").html("");
+		if (track == true){
+			$(".isTracking").buttonMarkup({'theme':'e', 'icon':'delete'});
+			track = false;
+		}
+		watch_id = null;			
+		tracking_data = [];
+	}
+
+	/*function loadgMap(){
+$.getScript("http://maps.googleapis.com/maps/api/js?key=AIzaSyD0j7HUREhDcBlyvPwkLD8ICsfelgoLSIE&sensor=false", function(data, textStatus, jqxhr) {	
 			gmapFile = true;
-		});*/
-    	}
+		});
+    	}*/
 
 	function vibrate(tps){
 		navigator.notification.vibrate(tps);
+	}
+
+	function gps_distance(lat1, lon1, lat2, lon2){
+  		// http://www.movable-type.co.uk/scripts/latlong.html
+    		var R = 6371; // km
+    		var dLat = (lat2-lat1) * (Math.PI / 180);
+    		var dLon = (lon2-lon1) * (Math.PI / 180);
+    		var lat1 = lat1 * (Math.PI / 180);
+    		var lat2 = lat2 * (Math.PI / 180);
+    		var a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.sin(dLon/2) * Math.sin(dLon/2) * Math.cos(lat1) * Math.cos(lat2);
+    		var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    		var d = R * c;
+    		return d;
 	}
 
     } // systemReady

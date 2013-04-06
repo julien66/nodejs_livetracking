@@ -24,7 +24,10 @@
      -->
 
     <access origin="http://127.0.0.1*" /><access origin=".*" /> <!-- allow local pages -->
-
+    <access origin="http://geolocalisation.ffvl.fr" /> <!-- allow geolocalisation.ffvl.fr -->
+    <access origin="http://91.121.133.40*" /> <!-- allow geoloc server -->
+	
+	
     <!-- <access origin="https://example.com" /> allow any secure requests to example.com -->
     <!-- <access origin="https://example.com" subdomains="true" /> such as above, but including subdomains, such as www -->
     

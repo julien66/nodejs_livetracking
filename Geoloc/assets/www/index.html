@@ -10,11 +10,11 @@
 <script type='text/javascript' src='lib/jquery-1.8.3.min.js'></script>
 <script type='text/javascript' src='lib/jquery.mobile-1.2.0/jquery.mobile-1.2.0.js'></script>
 <script type='text/javascript' src='lib/json2.js'></script>
-<script type='text/javascript' src='lib/starter.js'></script>
-<script type='text/javascript' src='http://maps.googleapis.com/maps/api/js?key=AIzaSyD0j7HUREhDcBlyvPwkLD8ICsfelgoLSIE&sensor=false'></script>
+<script type='text/javascript' charset='utf-8' src='lib/starter.js'></script>
+<!-- <script type='text/javascript' src='http://maps.googleapis.com/maps/api/js?key=AIzaSyD0j7HUREhDcBlyvPwkLD8ICsfelgoLSIE&sensor=false'></script> -->
 <link rel='stylesheet' type='text/css' href='lib/ffvl.css' />
 
-<link href="http://code.google.com/apis/maps/documentation/javascript/examples/default.css" rel="stylesheet" type="text/css" />
+<!-- <link href="http://code.google.com/apis/maps/documentation/javascript/examples/default.css" rel="stylesheet" type="text/css" /> -->
 <link rel='stylesheet' type='text/css' href='lib/jquery.mobile-1.2.0/jquery.mobile-1.2.0.css' />
 </head> 
 
@@ -34,8 +34,8 @@
   </div> <!-- Header -->
 
   <div data-role="content">
-     <span class="logo"><img style='width:100px;' alt='logo' src='lib/logo.png'></span><h4>Bienvenue sur l'application de tracking de la Fédération Française de Vol Libre. </h4><br/>
-     <b>Votre identifiant trackeur est le : <span id="idTrack"> </span></b>. Cet identifiant doit être renseigné sur votre page personnelle du site tracking.ffvl.fr 
+     <span class="logo"><img style='width:100px;' alt='logo' src='lib/logo.png'></span><h4>Bienvenue sur l'appli de géolocalisation en temps réel de la Fédération Française de Vol Libre. </h4><br/>
+     <b>Votre identifiant trackeur est le : <span id="idTrack"> </span></b>. Cet identifiant doit être renseigné dans votre compte personnel sur le site <a id="geosite" href="#" rel="http://geolocalisation.ffvl.fr"> geolocalisation.ffvl.fr</a>
   </div>
   
    <div data-role="footer" data-position="fixed" class="ui-bar" data-id="statebar">
@@ -117,12 +117,18 @@
   </div>
   <div data-role="content">
     <p id="track_info_info"></p>
-    <div id="map_canvas" style="position:absolute;top:80;left:0;width:100%;height:300px;"></div>
+    <!-- id="map_canvas" style="position:absolute;top:80;left:0;width:100%;height:300px;"></div>-->
+    <button data-role="button" id="deleteIt" data-theme="e" data-icon="alert"> Effacer </button>
+    <button data-role="button" id="sendIt" data-theme="e" data-icon="arrow-r"> Envoyer </button>
+    
   </div>
 
  <div data-role="footer" data-position="fixed" class="ui-bar" data-id="statebar">
-	<a id="deleteIt" href="#" data-role="button" data-theme="e" data-icon="trash">Effacer</a>
-	<a id="sendIt" class="send" href="#" data-role="button" data-theme="e" data-icon="email">Envoyer</a>
+	<a class="internet" href="#" data-role="button" data-theme="e" data-icon="delete">Internet</a>
+	<a class="isTracking" href="#" data-role="button" data-theme="e" data-icon="delete">Tracking</a>
+	<a class="ffvl" href="#" data-role="button" data-theme="e" data-icon="delete">FFVL</a>
+	<!-- <a id="deleteIt" href="#" data-role="button" data-theme="e" data-icon="trash">Effacer</a>
+	<a id="sendIt" class="send" href="#" data-role="button" data-theme="e" data-icon="email">Envoyer</a> -->
   </div>
 
 </div>
