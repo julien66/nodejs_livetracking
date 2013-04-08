@@ -143,7 +143,8 @@ $(document).ready( function() {
 	function rebuild_track_list(){
 		 // Count the number of entries in localStorage and display this information to the user
 		  tracks_recorded = window.localStorage.length;
-		  if (tracks_recorded > 1){
+		  console.log(window.localStorage);
+		  if (tracks_recorded <= 1){
 		  	$("#tracks_recorded").html("<strong>" + (tracks_recorded) + "</strong> Trace enregistrée");
 		  }
 		  else{
@@ -153,14 +154,16 @@ $(document).ready( function() {
   		  $("#history_tracklist").empty();
   		 // Iterate over all of the recorded tracks, populating the list
   		 for(i=0; i<tracks_recorded; i++){
-			var data = JSON.parse(window.localStorage.getItem(i.toString()));
-			$("#history_tracklist").append("<li><a id='"+i.toString()+"' href='#track_info' data-ajax='false'>" + data[0] + "</a></li>"); 
+			var realkey = window.localStorage.key(i);
+			var data = JSON.parse(window.localStorage.getItem(realkey));
+			$("#history_tracklist").append("<li><a id='"+realkey+"' href='#track_info' data-ajax='false'>" + data[0] + "</a></li>"); 
  		}
   		// Tell jQueryMobile to refresh the list
   		$("#history_tracklist").listview('refresh');
 	}
 
 	$("#history_tracklist li a").live('click', function(){
+		console.log($(this).attr('id'));
 		$("#track_info").attr("track_id", $(this).attr('id')); // En cas de clic sur un vol, passe le numéro du vol à la page d'info.
 	});
 
@@ -260,6 +263,7 @@ $(document).ready( function() {
 
 	function onDeleteConfirm(button) {
 		if (button == 1){
+			console.log(key);
 			window.localStorage.removeItem(key); // Efface le stockage. 
 			vibrate(500); // vibre.
 			$.mobile.changePage($("#history"),"none");// Retourne à l'historique.
