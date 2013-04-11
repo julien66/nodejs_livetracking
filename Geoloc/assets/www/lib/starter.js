@@ -29,6 +29,7 @@ $(document).ready( function() {
 	var nodejs = false;
 
 	var lowBat = false;
+	var minAccuracy = 100;
 
 	// Listen to the battery !!
 	document.addEventListener("batterystatus", onBatteryStatus, false);
@@ -143,7 +144,6 @@ $(document).ready( function() {
 	function rebuild_track_list(){
 		 // Count the number of entries in localStorage and display this information to the user
 		  tracks_recorded = window.localStorage.length;
-		  console.log(window.localStorage);
 		  if (tracks_recorded <= 1){
 		  	$("#tracks_recorded").html("<strong>" + (tracks_recorded) + "</strong> Trace enregistrée");
 		  }
@@ -350,49 +350,64 @@ $(document).ready( function() {
 		
 
 	var onSuccess = function(position) {
-		tracking_data.push(position);
+		if (position.coords.accuracy < minAccuracy ){
+			tracking_data.push(position);
 
-		/*var dat = startDate.getDate().toString() + "/"+ (startDate.getMonth()+1).toString() + "/"+startDate.getFullYear().toString()+" "+startDate.getHours().toString()+":"+(startDate.getMinutes()<10?'0':'') + startDate.getMinutes();
+			/*var dat = startDate.getDate().toString() + "/"+ (startDate.getMonth()+1).toString() + "/"+startDate.getFullYear().toString()+" "+startDate.getHours().toString()+":"+(startDate.getMinutes()<10?'0':'') + startDate.getMinutes();
 
-		if (tracking_data.length == 1){ 
-			window.localStorage.setItem( (window.localStorage.length).toString(), JSON.stringify([dat, tracking_data])  ); // Test keep every single point to local storage !!
-		}
-		else{ 
-			window.localStorage.setItem( (window.localStorage.length -1).toString(), JSON.stringify([dat, tracking_data])  ); // Test keep every single point to local storage !!
-		}*/
-		if (tracking_data.length < 3){
-			$("#startTracking_status").html("Recherche GPS... Vérifiez que le GPS soit activé et qu'il recoive bien un signal");
-			if (track == false){
-				track = true;
+			if (tracking_data.length == 1){ 
+				window.localStorage.setItem( (window.localStorage.length).toString(), JSON.stringify([dat, tracking_data])  ); // Test keep every single point to local storage !!
 			}
-		}
-		else{
-			$("#startTracking_status").html(tracking_data.length+" point(s) ont été enregistré(s)<br> Le trackeur fonctionne normalement.");
-			$(".isTracking").buttonMarkup({'theme':'b', 'icon':'check'});
-		}
-		
-		// J'envoi à nodejs :
-		if (nodejs){
-			var posMessage = { 
-				type : 'tracker-location',
-				position : position,
-				device : device.uuid,
-				ghost : ghost,
-				basetime : startDate.getTime()*0.001,
-				callback : 'nodejsGeoloc',
-				channel : 'tracking',
-			};
-			iosocket.emit('message', posMessage);		
-		}
+			else{ 
+				window.localStorage.setItem( (window.localStorage.length -1).toString(), JSON.stringify([dat, tracking_data])  ); // Test keep every single point to local storage !!
+			}*/
+			if (tracking_data.length < 3){
+				$("#startTracking_status").html("Recherche GPS... Vérifiez que le GPS soit activé et qu'il recoive bien un signal");
+				if (track == false){
+					track = true;
+				}
+			}
+			else{
+				$("#startTracking_status").html(tracking_data.length+" point(s) ont été enregistré(s)<br> Le trackeur fonctionne normalement.");
+				$(".isTracking").buttonMarkup({'theme':'b', 'icon':'check'});
+			}
+			
+			// J'envoi à nodejs :
+			if (nodejs){
+				var posMessage = { 
+					type : 'tracker-location',
+					position : position,
+					device : device.uuid,
+					ghost : ghost,
+					basetime : startDate.getTime()*0.001,
+					callback : 'nodejsGeoloc',
+					channel : 'tracking',
+				};
+				iosocket.emit('message', posMessage);		
+			}
+
+			$("#startTracking_debug").html(
+				'Latitude: '          + Math.round(position.coords.latitude * 10000000)/ 10000000 + '</br>' +
+		          	'Longitude: '         + Math.round(position.coords.longitude * 10000000)/10000000 + '</br>' +
+				'Précision: '          + Math.round(position.coords.accuracy) + '</br>' +
+		          	'Altitude: '          + Math.round(position.coords.altitude) + '</br>' +
+		          	//'Altitude Accuracy: ' + position.coords.altitudeAccuracy  + '\n' +
+		          	//'Heading: '           + position.coords.heading           + '\n' +
+		          	'Speed: '             + Math.round(position.coords.speed * 100) /100 + '</br>' +
+		          	'Timestamp: '         + position.timestamp                + '</br>'
+			);
+
     	  	/*console.log('Latitude: '          + position.coords.latitude          + '\n' +
-          'Longitude: '         + position.coords.longitude         + '\n' +
-          'Altitude: '          + position.coords.altitude          + '\n' +
-          'Accuracy: '          + position.coords.accuracy          + '\n' +
-          'Altitude Accuracy: ' + position.coords.altitudeAccuracy  + '\n' +
-          'Heading: '           + position.coords.heading           + '\n' +
-          'Speed: '             + position.coords.speed             + '\n' +
-          'Timestamp: '         + position.timestamp                + '\n');*/
+          	'Longitude: '         + position.coords.longitude         + '\n' +
+          	'Altitude: '          + position.coords.altitude          + '\n' +
+          	'Accuracy: '          + position.coords.accuracy          + '\n' +
+          	'Altitude Accuracy: ' + position.coords.altitudeAccuracy  + '\n' +
+          	'Heading: '           + position.coords.heading           + '\n' +
+          	'Speed: '             + position.coords.speed             + '\n' +
+          	'Timestamp: '         + position.timestamp                + '\n');*/
+		}
 	};
+	
 
 	// onError Callback receives a PositionError object
 	//
@@ -417,11 +432,15 @@ $(document).ready( function() {
 	function stopTracking(){
 		navigator.geolocation.clearWatch(watch_id); // Clear geolocation.
 		var dat = startDate.getDate().toString() + "/"+ (startDate.getMonth()+1).toString() + "/"+startDate.getFullYear().toString()+" "+startDate.getHours().toString()+":"+(startDate.getMinutes()<10?'0':'') + startDate.getMinutes();
-		window.localStorage.setItem( window.localStorage.length.toString() , JSON.stringify([dat, tracking_data]) ); // Trace stockée.
+		var maxi = (parseInt(window.localStorage.key(window.localStorage.length - 1)) + 1);
+		if (!maxi || maxi == '' || maxi == undefined || maxi == null  ){ maxi = 0; }
+		//console.log(maxi);
+		window.localStorage.setItem( maxi , JSON.stringify([dat, tracking_data]) ); // Trace stockée.
 		$("#startTracking_start").closest('.ui-btn').show();
 		$("#startTracking_stop").closest('.ui-btn').hide();
 		$('#startTracking_ghost').closest('.ui-btn').hide();
 		$("#startTracking_status").html("");
+		$("#startTracking_debug").html("");			
 		if (track == true){
 			$(".isTracking").buttonMarkup({'theme':'e', 'icon':'delete'});
 			track = false;
