@@ -19,8 +19,7 @@ $(document).ready( function() {
 	var track = false;	
 	var ghost = false;	
 
-	var data;
-	var key;
+	var timestamp;
 
 	var ioFile = false;
 	var gmapFile = false;	
@@ -30,6 +29,23 @@ $(document).ready( function() {
 
 	var lowBat = false;
 	var minAccuracy = 100;
+
+	var db = window.openDatabase("Database", "1.0", "Tracking", 50000000);
+	db.transaction(populateDB, errorCB, successCB);
+
+	function populateDB(tx){
+		//tx.executeSql('DROP TABLE IF EXISTS tracks');		
+		tx.executeSql('CREATE TABLE IF NOT EXISTS tracks (timestamp unique, date TEXT, data TEXT)');
+	}
+
+	function errorCB(err){
+		 alert("Erreur en manipulant SQL: "+err.code);
+
+	}
+
+	function successCB(){
+		console.log("Ok pour SQL");
+	}
 
 	// Listen to the battery !!
 	document.addEventListener("batterystatus", onBatteryStatus, false);
@@ -129,102 +145,87 @@ $(document).ready( function() {
 
 	function clearAll(bouton){
 		if (bouton == 1){
-			window.localStorage.clear();
-			vibrate(500);
-			//$.mobile.changePage( $('#history'), { reloadPage: true, transition: "none"} );
-			rebuild_track_list();
+			db.transaction(deleteAllTracks);
 		}
+	}
+
+	function deleteAllTracks(tx){		
+		//window.localStorage.clear();
+		tx.executeSql('DELETE FROM tracks', [], rebuild_track_list, errorDeleteAllTracks);
+	}
+
+	function errorDeleteAllTracks(err){
+		alert("Il y a eu un problème en essayant d'effacer toutes les traces : "+ err);
 	}
 
 	// When the user views the history page
 	$('#history').live('pageshow', function () {
-		  rebuild_track_list(); // Build track list.
+		  db.transaction(queryTracks);
 	});
 
-	function rebuild_track_list(){
-		 // Count the number of entries in localStorage and display this information to the user
-		  tracks_recorded = window.localStorage.length;
-		  if (tracks_recorded <= 1){
+	function queryTracks(tx){
+		tx.executeSql('SELECT timestamp, date FROM tracks ORDER BY timestamp', [], rebuild_track_list, errorSelectTracks);
+	}
+
+	function queryTracksById(tx){
+		//console.log(parseInt($("#track_info").attr("track_id")));
+		tx.executeSql('SELECT date, data FROM tracks WHERE timestamp = ?', [ timestamp ], updateTrackInfo , errorSelectTracks);
+	}
+
+	function errorSelectTracks(err){
+		alert("Erreur en sélectionnant la table tracks: " + err.code);
+	}
+
+	function rebuild_track_list(tx, results){
+		 tracks_recorded = results.rows.length;		
+		 if (tracks_recorded <= 1){
 		  	$("#tracks_recorded").html("<strong>" + (tracks_recorded) + "</strong> Trace enregistrée");
 		  }
-		  else{
+		 else{
 			$("#tracks_recorded").html("<strong>" + (tracks_recorded) + "</strong> Traces enregistrées");
 		  } 
-  		  // Empty the list of recorded tracks
-  		  $("#history_tracklist").empty();
-  		 // Iterate over all of the recorded tracks, populating the list
-  		 for(i=0; i<tracks_recorded; i++){
-			var realkey = window.localStorage.key(i);
-			var data = JSON.parse(window.localStorage.getItem(realkey));
-			$("#history_tracklist").append("<li><a id='"+realkey+"' href='#track_info' data-ajax='false'>" + data[0] + "</a></li>"); 
+
+  		 $("#history_tracklist").empty();  // Empty the list of recorded tracks
+  		 
+		 for(i=0; i<tracks_recorded; i++){ // Iterate over all of the recorded tracks, populating the list
+			$("#history_tracklist").append("<li><a id='"+results.rows.item(i).timestamp+"' href='#track_info' data-ajax='false'>" + results.rows.item(i).date + "</a></li>"); 
  		}
-  		// Tell jQueryMobile to refresh the list
-  		$("#history_tracklist").listview('refresh');
+
+  		$("#history_tracklist").listview('refresh'); // Tell jQueryMobile to refresh the list
 	}
 
 	$("#history_tracklist li a").live('click', function(){
-		console.log($(this).attr('id'));
 		$("#track_info").attr("track_id", $(this).attr('id')); // En cas de clic sur un vol, passe le numéro du vol à la page d'info.
+		timestamp = parseInt($(this).attr('id'));
+		$("#track_info div[data-role=header] h1").html('');
+		$("#track_info_info").html('');
+		db.transaction(queryTracksById);
 	});
 
-	// When the user views the Track Info page
-	$('#track_info').live('pageshow', function(){
-  		key = $(this).attr("track_id"); // Récupère le numéro du vol.
-  		data = JSON.parse(window.localStorage.getItem(key)); // Get Item and Turn the stringified data back into a JS object
-		$("#track_info div[data-role=header] h1").text(data[0]); // Update the Track Info page header to the track_id
-
+	function updateTrackInfo(tx, results){
+		var date = results.rows.item(0).date;
+		$("#track_info div[data-role=header] h1").html(date); // Update the Track Info page header to the track_id
 		// Total distance !
 		total_km = 0;
-		for(i = 0; i < data[1].length; i++){
-    			if(i == (data[1].length - 1)){
+		data = JSON.parse(results.rows.item(0).data);		
+		for(i = 0; i < data.length; i++){
+    			if(i == (data.length - 1)){
         			break;
     			}
-    			total_km += gps_distance(data[1][i].coords.latitude, data[1][i].coords.longitude, data[1][i+1].coords.latitude, data[1][i+1].coords.longitude);
+    			total_km += gps_distance(data[i].coords.latitude, data[i].coords.longitude, data[i+1].coords.latitude, data[i+1].coords.longitude);
 		}		
 		total_km_rounded = total_km.toFixed(2);
 		
 		// Total time travelled
-		start_time = new Date(data[1][0].timestamp).getTime();
-		end_time = new Date(data[1][data[1].length-1].timestamp).getTime();
+		start_time = new Date(data[0].timestamp).getTime();
+		end_time = new Date(data[data.length-1].timestamp).getTime();
 		milli = end_time - start_time;
 		seconds = Math.floor((milli / 1000) % 60);
       		minutes = Math.floor((milli / (60 * 1000)) % 60);
 		
-		$("#track_info_info").html('Le vol du <strong> '+data[0]+' </strong> contient <strong>'+data[1].length+'</strong> points GPS parcourant <strong>' + total_km_rounded + '</strong> km en <strong>' + minutes + 'mn</strong> et <strong>' + seconds + 's</strong>');
+		$("#track_info_info").html('Le vol du <strong> '+date+' </strong> contient <strong>'+data.length+'</strong> points GPS parcourant <strong>' + total_km_rounded + '</strong> km en <strong>' + minutes + 'mn</strong> et <strong>' + seconds + 's</strong>');
 
-		/* var myLatLng;
-		// Set the initial Lat and Long of the Google Map
-		if (data[1].length > 0){
-			myLatLng = new google.maps.LatLng(data[1][0].coords.latitude,  data[1][0].coords.longitude);
-		}
-		else{
-			myLatLng = new google.maps.LatLng(42.55, 1.53);
-		}
-
-		// Google Map options
-		var myOptions = {
-  		  zoom: 15,
-		  center : myLatLng,
-  		  mapTypeId: google.maps.MapTypeId.TERRAIN
-		};
-		// Create the Google Map, set options
-		var map = new google.maps.Map(document.getElementById("map_canvas"), myOptions);
-		var trackCoords = [];
-		// Add each GPS entry to an array
-		for(i=0; i<data[1].length; i++){
-    			trackCoords.push(new google.maps.LatLng(data[1][i].coords.latitude, data[1][i].coords.longitude));
-		}
-		// Plot the GPS entries as a line on the Google Map
-		var trackPath = new google.maps.Polyline({
-  		path: trackCoords,
-  		strokeColor: "#FF0000",
-  		strokeOpacity: 1.0,
-  		strokeWeight: 2
-		});
-		// Apply the line to the map
-		trackPath.setMap(map);*/
-	});		
-
+	}
 	
 	// When the user send the fullTrack to the server.
 	$('#sendIt').live('click',function(){ // Envoi à un service Drupal... /services-gettrack/gettrack/  ==> POSTGIS
@@ -246,8 +247,6 @@ $(document).ready( function() {
 				console.log(result);
 			}
 		});		
-		//console.log(data[0].timestamp);
-		//console.log("touche");
 	});
 	
 	// When the user erase the fulltrack from the local storage.
@@ -263,13 +262,23 @@ $(document).ready( function() {
 
 	function onDeleteConfirm(button) {
 		if (button == 1){
-			console.log(key);
-			window.localStorage.removeItem(key); // Efface le stockage. 
+			db.transaction(deleteTracks, errorDeleteTracks);
 			vibrate(500); // vibre.
 			$.mobile.changePage($("#history"),"none");// Retourne à l'historique.
 		}
 	}
 
+	function deleteTracks(tx){
+		tx.executeSql('DELETE FROM tracks WHERE timestamp='+ timestamp , [], deleteSuccess, errorDeleteTracks);
+	}
+
+	function errorDeleteTracks(err){
+		alert("Erreur au moment d'effacer la trace : "+ err.code);
+	}
+
+	function deleteSuccess(){
+		//alert('');
+	}
 
 	$("#startTracking").live('pageshow', function(){
 		$("#startTracking_stop").closest('.ui-btn').show();
@@ -353,14 +362,6 @@ $(document).ready( function() {
 		if (position.coords.accuracy < minAccuracy ){
 			tracking_data.push(position);
 
-			/*var dat = startDate.getDate().toString() + "/"+ (startDate.getMonth()+1).toString() + "/"+startDate.getFullYear().toString()+" "+startDate.getHours().toString()+":"+(startDate.getMinutes()<10?'0':'') + startDate.getMinutes();
-
-			if (tracking_data.length == 1){ 
-				window.localStorage.setItem( (window.localStorage.length).toString(), JSON.stringify([dat, tracking_data])  ); // Test keep every single point to local storage !!
-			}
-			else{ 
-				window.localStorage.setItem( (window.localStorage.length -1).toString(), JSON.stringify([dat, tracking_data])  ); // Test keep every single point to local storage !!
-			}*/
 			if (tracking_data.length < 3){
 				$("#startTracking_status").html("Recherche GPS... Vérifiez que le GPS soit activé et qu'il recoive bien un signal");
 				if (track == false){
@@ -389,22 +390,13 @@ $(document).ready( function() {
 			$("#startTracking_debug").html(
 				'Latitude: '          + Math.round(position.coords.latitude * 10000000)/ 10000000 + '</br>' +
 		          	'Longitude: '         + Math.round(position.coords.longitude * 10000000)/10000000 + '</br>' +
-				'Précision: '          + Math.round(position.coords.accuracy) + '</br>' +
+				'Précision: '         + Math.round(position.coords.accuracy) + '</br>' +
 		          	'Altitude: '          + Math.round(position.coords.altitude) + '</br>' +
 		          	//'Altitude Accuracy: ' + position.coords.altitudeAccuracy  + '\n' +
 		          	//'Heading: '           + position.coords.heading           + '\n' +
 		          	'Speed: '             + Math.round(position.coords.speed * 100) /100 + '</br>' +
 		          	'Timestamp: '         + position.timestamp                + '</br>'
 			);
-
-    	  	/*console.log('Latitude: '          + position.coords.latitude          + '\n' +
-          	'Longitude: '         + position.coords.longitude         + '\n' +
-          	'Altitude: '          + position.coords.altitude          + '\n' +
-          	'Accuracy: '          + position.coords.accuracy          + '\n' +
-          	'Altitude Accuracy: ' + position.coords.altitudeAccuracy  + '\n' +
-          	'Heading: '           + position.coords.heading           + '\n' +
-          	'Speed: '             + position.coords.speed             + '\n' +
-          	'Timestamp: '         + position.timestamp                + '\n');*/
 		}
 	};
 	
@@ -430,12 +422,20 @@ $(document).ready( function() {
     	}
 
 	function stopTracking(){
+		db.transaction(insertTrack);
+	}
+
+	function insertTrack(tx){
+		var baseDate = startDate.getDate().toString() + "/"+ (startDate.getMonth()+1).toString() + "/"+startDate.getFullYear().toString()+" "+startDate.getHours().toString()+":"+(startDate.getMinutes()<10?'0':'') + startDate.getMinutes();
+		tx.executeSql('INSERT INTO tracks (timestamp, date, data) VALUES (?,?,?)', [ startDate.getTime(), baseDate,JSON.stringify(tracking_data) ], successInsert, errorInsert);
+	}
+	
+	function errorInsert(err){
+		alert("Problème à l'insertion de la trace : " +err.code);
+	}
+
+	function successInsert(){
 		navigator.geolocation.clearWatch(watch_id); // Clear geolocation.
-		var dat = startDate.getDate().toString() + "/"+ (startDate.getMonth()+1).toString() + "/"+startDate.getFullYear().toString()+" "+startDate.getHours().toString()+":"+(startDate.getMinutes()<10?'0':'') + startDate.getMinutes();
-		var maxi = (parseInt(window.localStorage.key(window.localStorage.length - 1)) + 1);
-		if (!maxi || maxi == '' || maxi == undefined || maxi == null  ){ maxi = 0; }
-		//console.log(maxi);
-		window.localStorage.setItem( maxi , JSON.stringify([dat, tracking_data]) ); // Trace stockée.
 		$("#startTracking_start").closest('.ui-btn').show();
 		$("#startTracking_stop").closest('.ui-btn').hide();
 		$('#startTracking_ghost').closest('.ui-btn').hide();
@@ -447,13 +447,8 @@ $(document).ready( function() {
 		}
 		watch_id = null;			
 		tracking_data = [];
+		alert('La trace a bien été insérée');
 	}
-
-	/*function loadgMap(){
-$.getScript("http://maps.googleapis.com/maps/api/js?key=AIzaSyD0j7HUREhDcBlyvPwkLD8ICsfelgoLSIE&sensor=false", function(data, textStatus, jqxhr) {	
-			gmapFile = true;
-		});
-    	}*/
 
 	function vibrate(tps){
 		navigator.notification.vibrate(tps);
