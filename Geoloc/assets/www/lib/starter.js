@@ -14,21 +14,21 @@ $(document).ready( function() {
 
 	var watch_id = null;    // ID of the geolocation
 	var tracking_data = []; // Array containing GPS position objects
-	var startDate;
-	var internet = false;
-	var track = false;	
-	var ghost = false;	
+	var startDate; // La date de base au moment de l'activation d'un tracking
+	var internet = false; // Internet ou pas.
+	var track = false; // En mode tracking ou pas.
+	var ghost = false; // En mode fantôme ou pas.
 
-	var timestamp;
+	var timestamp; // Le timestamp de la trace actuellement consultée.
+	var data; // Les données de la trace actuellement consultée
 
-	var ioFile = false;
-	var gmapFile = false;	
+	var ioFile = false; // socket.io chargé.
 
-	var iosocket;
-	var nodejs = false;
+	var iosocket; // Le socket
+	var nodejs = false; // nodejs connecté.
 
-	var lowBat = false;
-	var minAccuracy = 100;
+	var lowBat = false; // Low Baterie ou pas.
+	var minAccuracy = 100; // Précision minimale du point pour qu'il soit retenu.
 
 	var db = window.openDatabase("Database", "1.0", "Tracking", 50000000);
 	db.transaction(populateDB, errorCB, successCB);
@@ -232,7 +232,7 @@ $(document).ready( function() {
 		// Ici tu dois affiher un throbber et/ou freezer jusqu'à ce que l'envoi soit ok ?! - Risqué -> Attention gestion erreur.
 
 		$.post("http://ks201694.kimsufi.com/services-gettrack/gettrack/"+device.uuid, {
-			log : data
+			log : Array(timestamp, data)
 		},
 		function(result){
 			if (result == "CREATE OK"){
