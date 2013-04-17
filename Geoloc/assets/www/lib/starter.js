@@ -29,8 +29,9 @@ $(document).ready( function() {
 
 	var lowBat = false; // Low Baterie ou pas.
 	var minAccuracy = 100; // Précision minimale du point pour qu'il soit retenu.
+	var vario = 0; // Le vario durant le tracking;
 
-	var db = window.openDatabase("Database", "1.0", "Tracking", 50000000);
+	var db = window.openDatabase("Database", "1.0", "Tracking", 50000000); // La base de donnée.
 	db.transaction(populateDB, errorCB, successCB);
 
 	function populateDB(tx){
@@ -92,8 +93,11 @@ $(document).ready( function() {
 
 	function connectSocket(){
 		// Lance la connection au socket.
-		iosocket = io.connect("http://91.121.133.40:8080");
-	
+		iosocket = io.connect("http://91.121.133.40:4321");
+		//io.set('transports', [ 'websocket', 'xhr-polling' ]);
+		console.log("Trying to connect ...");	
+
+
  		iosocket.on('connect', function () {
 			// Gère la connection à nodejs.
 			nodejs = true;
@@ -360,7 +364,7 @@ $(document).ready( function() {
 
 	var onSuccess = function(position) {
 		if (position.coords.accuracy < minAccuracy ){
-			tracking_data.push(position);
+			tracking_data.push(position);			
 
 			if (tracking_data.length < 3){
 				$("#startTracking_status").html("Recherche GPS... Vérifiez que le GPS soit activé et qu'il recoive bien un signal");
@@ -371,7 +375,10 @@ $(document).ready( function() {
 			else{
 				$("#startTracking_status").html(tracking_data.length+" point(s) ont été enregistré(s)<br> Le trackeur fonctionne normalement.");
 				$(".isTracking").buttonMarkup({'theme':'b', 'icon':'check'});
+				vario = (position.coords.altitude - tracking_data[tracking_data.length-2].coords.altitude) / ( (position.timestamp - tracking_data[tracking_data.length-2].timestamp) * 0.001);
 			}
+
+			position.coords.vario = vario;
 			
 			// J'envoi à nodejs :
 			if (nodejs){
@@ -390,12 +397,13 @@ $(document).ready( function() {
 			$("#startTracking_debug").html(
 				'Latitude: '          + Math.round(position.coords.latitude * 10000000)/ 10000000 + '</br>' +
 		          	'Longitude: '         + Math.round(position.coords.longitude * 10000000)/10000000 + '</br>' +
-				'Précision: '         + Math.round(position.coords.accuracy) + '</br>' +
-		          	'Altitude: '          + Math.round(position.coords.altitude) + '</br>' +
-		          	//'Altitude Accuracy: ' + position.coords.altitudeAccuracy  + '\n' +
-		          	//'Heading: '           + position.coords.heading           + '\n' +
-		          	'Speed: '             + Math.round(position.coords.speed * 100) /100 + '</br>' +
-		          	'Timestamp: '         + position.timestamp                + '</br>'
+				'Précision: '         + Math.round(position.coords.accuracy) + ' m </br>' +
+		          	'Altitude: '          + Math.round(position.coords.altitude) + ' m </br>' +
+		          	// 'Précision alti: ' + position.coords.altitudeAccuracy  + '</br>' +
+		          	//'Heading: '         + position.coords.heading           + '</br>' +
+				'Vario: ' 	      + Math.round(position.coords.vario * 100) /100 + ' m/s </br>' + 
+		          	'Vitesse: '           + Math.round(position.coords.speed * 3.6 * 100) /100 + ' Km/h </br>'
+		          	//'Timestamp: '         + position.timestamp                + '</br>'
 			);
 		}
 	};
@@ -415,7 +423,8 @@ $(document).ready( function() {
 	}
 
 	function loadIO(){
-		$.getScript("http://91.121.133.40:8080/socket.io/socket.io.js", function(data, textStatus, jqxhr) {	
+		$.getScript("http://91.121.133.40:4321/socket.io/socket.io.js", function(data, textStatus, jqxhr) {	
+			console.log("Fichier socket.io chagé !");
 			ioFile = true;
 			connectSocket();
 		});
