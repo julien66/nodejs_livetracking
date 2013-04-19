@@ -12,6 +12,7 @@
 <script type='text/javascript' src='lib/json2.js'></script>
 <script type='text/javascript' charset='utf-8' src='lib/starter.js'></script>
 <!-- <script type='text/javascript' src='http://maps.googleapis.com/maps/api/js?key=AIzaSyD0j7HUREhDcBlyvPwkLD8ICsfelgoLSIE&sensor=false'></script> -->
+<!-- <script type='text/javascript' src='http://91.121.133.40:4321/socket.io/socket.io.js'></script> -->
 <link rel='stylesheet' type='text/css' href='lib/ffvl.css' />
 
 <!-- <link href="http://code.google.com/apis/maps/documentation/javascript/examples/default.css" rel="stylesheet" type="text/css" /> -->
@@ -65,6 +66,7 @@
     <button data-role="button" id="startTracking_stop" data-theme="b">Arrêter le Tracking</button>
     <button data-role="button" id="startTracking_ghost" data-theme="b">Activer le mode fantôme</button>
         <p id="startTracking_debug"></p>
+	<p id="startTacking_accelero"></p>
 
   <!-- <div data-role="fieldcontain">
 	<label for="flip-secours">Appel à l'aide :</label>
@@ -126,6 +128,7 @@
   </div>
   <div data-role="content">
     <p id="track_info_info"></p>
+    <p id="acc_recorded"></p>
     <!-- id="map_canvas" style="position:absolute;top:80;left:0;width:100%;height:300px;"></div>-->
     <button data-role="button" id="deleteIt" data-theme="e" data-icon="alert"> Effacer </button>
     <button data-role="button" id="sendIt" data-theme="e" data-icon="arrow-r"> Envoyer </button>

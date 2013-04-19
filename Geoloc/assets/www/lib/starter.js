@@ -13,7 +13,9 @@ $(document).ready( function() {
 	/**  => Est-ce que je peux, sotcker à chaque point ??? TEST ! **/
 
 	var watch_id = null;    // ID of the geolocation
+	var watch_ac = null // ID of the acceleration.
 	var tracking_data = []; // Array containing GPS position objects
+	var tracking_ac = []; // Array containing Acceleration objects.
 	var startDate; // La date de base au moment de l'activation d'un tracking
 	var internet = false; // Internet ou pas.
 	var track = false; // En mode tracking ou pas.
@@ -36,7 +38,7 @@ $(document).ready( function() {
 
 	function populateDB(tx){
 		//tx.executeSql('DROP TABLE IF EXISTS tracks');		
-		tx.executeSql('CREATE TABLE IF NOT EXISTS tracks (timestamp unique, date TEXT, data TEXT)');
+		tx.executeSql('CREATE TABLE IF NOT EXISTS tracks (timestamp unique, date TEXT, data TEXT, acc TEXT)');
 	}
 
 	function errorCB(err){
@@ -65,12 +67,12 @@ $(document).ready( function() {
 	}
 
 	// Listen to the connection !!
-	document.addEventListener("online", onOnline, false);
+	document.addEventListener("online", onOnline, false );
 	function onOnline() { 	    // Handle the online event
 	    if (internet == false){
 	    	$(".internet").buttonMarkup({'theme':"b", 'icon':"check" });
 	  	internet = true;
-		 if (ioFile == false){
+		if (ioFile == false){
 			 loadIO();
 		}
 		 else{
@@ -94,7 +96,6 @@ $(document).ready( function() {
 	function connectSocket(){
 		// Lance la connection au socket.
 		iosocket = io.connect("http://91.121.133.40:4321");
-		//io.set('transports', [ 'websocket', 'xhr-polling' ]);
 		console.log("Trying to connect ...");	
 
 
@@ -173,7 +174,7 @@ $(document).ready( function() {
 
 	function queryTracksById(tx){
 		//console.log(parseInt($("#track_info").attr("track_id")));
-		tx.executeSql('SELECT date, data FROM tracks WHERE timestamp = ?', [ timestamp ], updateTrackInfo , errorSelectTracks);
+		tx.executeSql('SELECT date, data, acc FROM tracks WHERE timestamp = ?', [ timestamp ], updateTrackInfo , errorSelectTracks);
 	}
 
 	function errorSelectTracks(err){
@@ -211,6 +212,13 @@ $(document).ready( function() {
 		$("#track_info div[data-role=header] h1").html(date); // Update the Track Info page header to the track_id
 		// Total distance !
 		total_km = 0;
+		var accelo = JSON.parse(results.rows.item(0).acc);
+		var accel = '';
+		for (var i = 0; i < accelo.length; i++ ){
+			accel = accel + Math.round(accelo[i].x * 100) / 100+' '+Math.round(accelo[i].y * 100) / 100+' '+Math.round(accelo[i].z * 100) / 100+'<br/>'; 
+		}
+		//console.log(accelo);
+		$("#acc_recorded").html("L'accélération enregistrée : <ul>" + accel + '</ul>');
 		data = JSON.parse(results.rows.item(0).data);		
 		for(i = 0; i < data.length; i++){
     			if(i == (data.length - 1)){
@@ -221,14 +229,17 @@ $(document).ready( function() {
 		total_km_rounded = total_km.toFixed(2);
 		
 		// Total time travelled
-		start_time = new Date(data[0].timestamp).getTime();
-		end_time = new Date(data[data.length-1].timestamp).getTime();
-		milli = end_time - start_time;
-		seconds = Math.floor((milli / 1000) % 60);
-      		minutes = Math.floor((milli / (60 * 1000)) % 60);
+		console.log(data.length);
+		if ( data.length > 1){
+			start_time = new Date(data[0].timestamp).getTime();
+			end_time = new Date(data[data.length-1].timestamp).getTime();
+			milli = end_time - start_time;
+			seconds = Math.floor((milli / 1000) % 60);
+      			minutes = Math.floor((milli / (60 * 1000)) % 60);
 		
-		$("#track_info_info").html('Le vol du <strong> '+date+' </strong> contient <strong>'+data.length+'</strong> points GPS parcourant <strong>' + total_km_rounded + '</strong> km en <strong>' + minutes + 'mn</strong> et <strong>' + seconds + 's</strong>');
 
+		$("#track_info_info").html('Le vol du <strong> '+date+' </strong> contient <strong>'+data.length+'</strong> points GPS parcourant <strong>' + total_km_rounded + '</strong> km en <strong>' + minutes + 'mn</strong> et <strong>' + seconds + 's</strong>');
+		}
 	}
 	
 	// When the user send the fullTrack to the server.
@@ -312,6 +323,10 @@ $(document).ready( function() {
 			$("#startTracking_status").html("Recherche GPS.");
 			watch_id = navigator.geolocation.watchPosition(onSuccess, onError, { timeout: 5000, maximumAge: 0,enableHighAccuracy: true });
 		}
+		if (watch_ac == null){
+			options = {frequency: 1000};
+			watch_ac = navigator.accelerometer.watchAcceleration(onAccSuccess, onAccError, options);
+		}
 	}else{
 		navigator.notification.confirm(
 			'La batterie est trop basse pour activer le tracking',
@@ -322,6 +337,21 @@ $(document).ready( function() {
 		
 	}
 	});
+
+	function onAccSuccess(acceleration){
+		tracking_ac.push(acceleration);
+		$('#startTacking_accelero').html(
+			    'Acceleration X: ' + Math.round(acceleration.x*100)/100 + '<br />' +
+                            'Acceleration Y: ' + Math.round(acceleration.y*100)/100 + '<br />' +
+                            'Acceleration Z: ' + Math.round(acceleration.z*100)/100 + '<br />' +
+                            'Timestamp: '      + acceleration.timestamp + '<br />'
+		);
+	}
+
+	function onAccError(){
+		console.log("Erreur à la capture de l'acceleration");
+	}
+	
 
 	$("#startTracking_ghost").live('click', function(){ // When the user enable or disable ghost function
 		if (ghost == false){
@@ -423,10 +453,16 @@ $(document).ready( function() {
 	}
 
 	function loadIO(){
-		$.getScript("http://91.121.133.40:4321/socket.io/socket.io.js", function(data, textStatus, jqxhr) {	
+		console.log(" Requiert socket.io");
+		$.get("http://91.121.133.40:4321/socket.io/socket.io.js").done(function() {	
 			console.log("Fichier socket.io chagé !");
 			ioFile = true;
 			connectSocket();
+		}).fail(function(jqxhr, settings, exception) {
+			console.log("raté, requiert socket.io si Internet");
+			if (internet == true){
+				loadIO();
+			 }
 		});
     	}
 
@@ -436,7 +472,7 @@ $(document).ready( function() {
 
 	function insertTrack(tx){
 		var baseDate = startDate.getDate().toString() + "/"+ (startDate.getMonth()+1).toString() + "/"+startDate.getFullYear().toString()+" "+startDate.getHours().toString()+":"+(startDate.getMinutes()<10?'0':'') + startDate.getMinutes();
-		tx.executeSql('INSERT INTO tracks (timestamp, date, data) VALUES (?,?,?)', [ startDate.getTime(), baseDate,JSON.stringify(tracking_data) ], successInsert, errorInsert);
+		tx.executeSql('INSERT INTO tracks (timestamp, date, data, acc) VALUES (?,?,?,?)', [ startDate.getTime(), baseDate,JSON.stringify(tracking_data), JSON.stringify(tracking_ac) ], successInsert, errorInsert);
 	}
 	
 	function errorInsert(err){
@@ -444,6 +480,7 @@ $(document).ready( function() {
 	}
 
 	function successInsert(){
+		navigator.accelerometer.clearWatch(watch_ac); // Clear accelerometer
 		navigator.geolocation.clearWatch(watch_id); // Clear geolocation.
 		$("#startTracking_start").closest('.ui-btn').show();
 		$("#startTracking_stop").closest('.ui-btn').hide();
@@ -455,7 +492,9 @@ $(document).ready( function() {
 			track = false;
 		}
 		watch_id = null;			
+		watch_ac = null;
 		tracking_data = [];
+		tracking_ac = [];
 		alert('La trace a bien été insérée');
 	}
 
