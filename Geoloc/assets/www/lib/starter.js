@@ -324,7 +324,7 @@ $(document).ready( function() {
 			watch_id = navigator.geolocation.watchPosition(onSuccess, onError, { timeout: 5000, maximumAge: 0,enableHighAccuracy: true });
 		}
 		if (watch_ac == null){
-			options = {frequency: 1000};
+			options = {frequency: 30};
 			watch_ac = navigator.accelerometer.watchAcceleration(onAccSuccess, onAccError, options);
 		}
 	}else{
@@ -486,7 +486,8 @@ $(document).ready( function() {
 		$("#startTracking_stop").closest('.ui-btn').hide();
 		$('#startTracking_ghost').closest('.ui-btn').hide();
 		$("#startTracking_status").html("");
-		$("#startTracking_debug").html("");			
+		$("#startTracking_debug").html("");
+		$("#tracks_recorded").html("");			
 		if (track == true){
 			$(".isTracking").buttonMarkup({'theme':'e', 'icon':'delete'});
 			track = false;
