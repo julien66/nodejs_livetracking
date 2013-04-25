@@ -16,3 +16,7 @@ body{
 #idTrack{
 	color:#ffcc33;
 }
+
+#throbber{
+	display:none;
+}

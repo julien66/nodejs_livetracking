@@ -13,13 +13,15 @@ $(document).ready( function() {
 	/**  => Est-ce que je peux, sotcker à chaque point ??? TEST ! **/
 
 	var watch_id = null;    // ID of the geolocation
-	var watch_ac = null // ID of the acceleration.
+	// var watch_ac = null // ID of the acceleration.
 	var tracking_data = []; // Array containing GPS position objects
-	var tracking_ac = []; // Array containing Acceleration objects.
+	// var tracking_ac = []; // Array containing Acceleration objects.
 	var startDate; // La date de base au moment de l'activation d'un tracking
 	var internet = false; // Internet ou pas.
-	var track = false; // En mode tracking ou pas.
+	var trackRequest = false; // En train de tracker ou de vouloir tracker (pas forcément en fonctionnement).
+	var track = false; // En train de tracker ou pas. (En fonctionnement).
 	var ghost = false; // En mode fantôme ou pas.
+	var connection = ''; // Le mode de connection.
 
 	var timestamp; // Le timestamp de la trace actuellement consultée.
 	var data; // Les données de la trace actuellement consultée
@@ -38,7 +40,7 @@ $(document).ready( function() {
 
 	function populateDB(tx){
 		//tx.executeSql('DROP TABLE IF EXISTS tracks');		
-		tx.executeSql('CREATE TABLE IF NOT EXISTS tracks (timestamp unique, date TEXT, data TEXT, acc TEXT)');
+		tx.executeSql('CREATE TABLE IF NOT EXISTS tracks (timestamp unique, date TEXT, data TEXT)');
 	}
 
 	function errorCB(err){
@@ -51,20 +53,46 @@ $(document).ready( function() {
 	}
 
 	// Listen to the battery !!
-	document.addEventListener("batterystatus", onBatteryStatus, false);
-	function onBatteryStatus(info) { // Handle the battery low event	
-		//console.log(info.level);
-		alert('test');
-		/*stopTracking();
-		vibrate(500);
-		navigator.notification.confirm(
-			'La batterie est faible et le tracking a donc été stopé pour économiser de la batterie !',
-			vibrate(500),
-			'Attention',
-			'OK'
-		);
-		lowBat = true;*/
+	window.addEventListener("batterystatus", onBatteryStatus, false);
+	function onBatteryStatus(info) { // Handle the battery low event
+		console.log(info.level);
+		if (info.isPlugged == false && info.level < 20){
+			if (trackRequested == true){
+				stopTracking();
+				vibrate(500);
+				navigator.notification.confirm(
+					"La batterie est faible et le tracking a donc été stopé pour économiser de l'énérgie !",
+					vibrate(500),
+					'Attention',
+					'OK'
+				);
+			}
+			lowBat = true;
+		}
 	}
+
+	function checkConnection() {
+		    connection = navigator.connection.type;
+
+		 /* 
+		    var states = {};
+		    states[Connection.UNKNOWN]  = 'Unknown connection';
+		    states[Connection.ETHERNET] = 'Ethernet connection';
+		    states[Connection.WIFI]     = 'WiFi connection';
+		    states[Connection.CELL_2G]  = 'Cell 2G connection';
+		    states[Connection.CELL_3G]  = 'Cell 3G connection';
+		    states[Connection.CELL_4G]  = 'Cell 4G connection';
+		    states[Connection.NONE]     = 'No network connection';
+		   
+  		    return states[networkState];
+		*/
+		    return connection;
+	}
+
+	if ( checkConnection() != 'Connection.NONE'){
+		onOnline();
+	};
+
 
 	// Listen to the connection !!
 	document.addEventListener("online", onOnline, false );
@@ -95,35 +123,37 @@ $(document).ready( function() {
 
 	function connectSocket(){
 		// Lance la connection au socket.
-		iosocket = io.connect("http://91.121.133.40:4321");
-		console.log("Trying to connect ...");	
+		if (nodejs == false){
+			iosocket = io.connect("http://91.121.133.40:4321");
+			console.log("Trying to connect ...");	
 
 
- 		iosocket.on('connect', function () {
-			// Gère la connection à nodejs.
-			nodejs = true;
-			$(".ffvl").buttonMarkup({'theme':"b", 'icon':"check" });
-			iosocket.on('disconnect', function() { // Quand cela deconnecte !
-				nodejs = false;
-				$(".ffvl").buttonMarkup({'theme':"e", 'icon':"delete" });
-				iosocket.removeListener('connect');
-				iosocket.removeListener('client-authenticated');
-				// Gère la déconnection à nodejs.
+ 			iosocket.on('connect', function () {
+				// Gère la connection à nodejs.
+				nodejs = true;
+				$(".ffvl").buttonMarkup({'theme':"b", 'icon':"check" });
+				iosocket.on('disconnect', function() { // Quand cela deconnecte !
+					nodejs = false;
+					$(".ffvl").buttonMarkup({'theme':"e", 'icon':"delete" });
+					iosocket.removeListener('connect');
+					iosocket.removeListener('client-authenticated');
+					// Gère la déconnection à nodejs.
+				});
+
+				var authMessage = {
+				    authToken: 'uuid-'+device.uuid,
+				    contentTokens: undefined
+				};
+
+				iosocket.on('client-authenticated',function(){ // Quand authentifié !
+					//console.log("recu");
+					//console.log(message);
+					alert('auth !');
+				});
+
+				iosocket.emit('authenticate', authMessage);
 			});
-
-			var authMessage = {
-			    authToken: 'uuid-'+device.uuid,
-			    contentTokens: undefined
-			};
-
-			iosocket.on('client-authenticated',function(){ // Quand authentifié !
-				//console.log("recu");
-				//console.log(message);
-				alert('auth !');
-			});
-
-			iosocket.emit('authenticate', authMessage);
-		});
+		}
 	}
 
 	$('#geosite').live('tap', function(){
@@ -174,7 +204,7 @@ $(document).ready( function() {
 
 	function queryTracksById(tx){
 		//console.log(parseInt($("#track_info").attr("track_id")));
-		tx.executeSql('SELECT date, data, acc FROM tracks WHERE timestamp = ?', [ timestamp ], updateTrackInfo , errorSelectTracks);
+		tx.executeSql('SELECT date, data FROM tracks WHERE timestamp = ?', [ timestamp ], updateTrackInfo , errorSelectTracks);
 	}
 
 	function errorSelectTracks(err){
@@ -194,7 +224,7 @@ $(document).ready( function() {
   		 
 		 for(i=0; i<tracks_recorded; i++){ // Iterate over all of the recorded tracks, populating the list
 			$("#history_tracklist").append("<li><a id='"+results.rows.item(i).timestamp+"' href='#track_info' data-ajax='false'>" + results.rows.item(i).date + "</a></li>"); 
- 		}
+		}
 
   		$("#history_tracklist").listview('refresh'); // Tell jQueryMobile to refresh the list
 	}
@@ -212,13 +242,13 @@ $(document).ready( function() {
 		$("#track_info div[data-role=header] h1").html(date); // Update the Track Info page header to the track_id
 		// Total distance !
 		total_km = 0;
-		var accelo = JSON.parse(results.rows.item(0).acc);
+		/*var accelo = JSON.parse(results.rows.item(0).acc);
 		var accel = '';
 		for (var i = 0; i < accelo.length; i++ ){
 			accel = accel + Math.round(accelo[i].x * 100) / 100+' '+Math.round(accelo[i].y * 100) / 100+' '+Math.round(accelo[i].z * 100) / 100+'<br/>'; 
 		}
 		//console.log(accelo);
-		$("#acc_recorded").html("L'accélération enregistrée : <ul>" + accel + '</ul>');
+		$("#acc_recorded").html("L'accélération enregistrée : <ul>" + accel + '</ul>');*/
 		data = JSON.parse(results.rows.item(0).data);		
 		for(i = 0; i < data.length; i++){
     			if(i == (data.length - 1)){
@@ -244,8 +274,9 @@ $(document).ready( function() {
 	
 	// When the user send the fullTrack to the server.
 	$('#sendIt').live('click',function(){ // Envoi à un service Drupal... /services-gettrack/gettrack/  ==> POSTGIS
-		// Ici tu dois affiher un throbber et/ou freezer jusqu'à ce que l'envoi soit ok ?! - Risqué -> Attention gestion erreur.
-
+		$("#deleteIt").closest('.ui-btn').hide();
+		$("#sendIt").closest('.ui-btn').hide();
+		$("#throbber").show();
 		$.post("http://ks201694.kimsufi.com/services-gettrack/gettrack/"+device.uuid, {
 			log : Array(timestamp, data)
 		},
@@ -260,7 +291,16 @@ $(document).ready( function() {
 			}
 			else{
 				console.log(result);
+				navigator.notification.alert(
+            				"Le serveur FFVL n'est pas parvenu à enregistrer cette trace.",  // message
+            				vibrate(500),         // callback
+            				'Erreur',            // title
+            				'OK'                  // buttonName
+        			);
 			}
+			$("#throbber").hide();
+			$("#sendIt").closest('.ui-btn').show();
+			$("#deleteIt").closest('.ui-btn').show();
 		});		
 	});
 	
@@ -270,7 +310,7 @@ $(document).ready( function() {
 			'Souhaitez-vous vraiment effacer cette trace ?', // message
 			 onDeleteConfirm, // callback
 			 'Attention', // title
-			 'OUI, NON' // buttonsName
+			 Array('OUI', 'NON') // buttonsName
 		);
 	});
 
@@ -284,7 +324,7 @@ $(document).ready( function() {
 	}
 
 	function deleteTracks(tx){
-		tx.executeSql('DELETE FROM tracks WHERE timestamp='+ timestamp , [], deleteSuccess, errorDeleteTracks);
+		tx.executeSql('DELETE FROM tracks WHERE timestamp = ?', [timestamp], deleteSuccess, errorDeleteTracks);
 	}
 
 	function errorDeleteTracks(err){
@@ -292,18 +332,18 @@ $(document).ready( function() {
 	}
 
 	function deleteSuccess(){
-		//alert('');
+		alert('La trace est effacée');
 	}
 
 	$("#startTracking").live('pageshow', function(){
 		$("#startTracking_stop").closest('.ui-btn').show();
 		$('#startTracking_ghost').closest('.ui-btn').show();
 
-		if (track == false){
+		if (trackRequest == false){
 			$("#startTracking_stop").closest('.ui-btn').hide();
 			$('#startTracking_ghost').closest('.ui-btn').hide();
 		}
-		else if (track == true){
+		else if (trackRequest == true){
 			$("#startTracking_start").closest('.ui-btn').hide();
 		}
 	});
@@ -322,11 +362,12 @@ $(document).ready( function() {
 			ghost = false;
 			$("#startTracking_status").html("Recherche GPS.");
 			watch_id = navigator.geolocation.watchPosition(onSuccess, onError, { timeout: 5000, maximumAge: 0,enableHighAccuracy: true });
+			trackRequest = true;
 		}
-		if (watch_ac == null){
+		/*if (watch_ac == null){
 			options = {frequency: 30};
 			watch_ac = navigator.accelerometer.watchAcceleration(onAccSuccess, onAccError, options);
-		}
+		}*/
 	}else{
 		navigator.notification.confirm(
 			'La batterie est trop basse pour activer le tracking',
@@ -338,7 +379,7 @@ $(document).ready( function() {
 	}
 	});
 
-	function onAccSuccess(acceleration){
+	/*function onAccSuccess(acceleration){
 		tracking_ac.push(acceleration);
 		$('#startTacking_accelero').html(
 			    'Acceleration X: ' + Math.round(acceleration.x*100)/100 + '<br />' +
@@ -350,7 +391,7 @@ $(document).ready( function() {
 
 	function onAccError(){
 		console.log("Erreur à la capture de l'acceleration");
-	}
+	}*/
 	
 
 	$("#startTracking_ghost").live('click', function(){ // When the user enable or disable ghost function
@@ -366,7 +407,7 @@ $(document).ready( function() {
 					}
 				 }, // callback
 				 'Attention', // title
-				 'OUI, NON' // buttonsName
+				 Array('OUI, NON') // buttonsName
 			);
 		}
 		else {						
@@ -387,7 +428,7 @@ $(document).ready( function() {
 				}
 			}, // callabck
 			'Attention',
-			'OUI, NON'
+			Array('OUI, NON')
 			);		
 	});
 		
@@ -423,6 +464,25 @@ $(document).ready( function() {
 				};
 				iosocket.emit('message', posMessage);		
 			}
+
+		/*$.ajax({
+  			url: "http://ks201694.kimsufi.com:4321",
+  			type:"POST",
+  			data: JSON.stringify({
+				"uuid" : 'uuid-'+device.uuid,
+				"lat" : position.coords.latitude,
+				"lon" : position.coords.longitude,
+				"altitude" : position.coords.altitude,
+				"vitesse" : position.coords.speed,
+				"precision" : position.coords.accuracy,
+				"vario" : vario,
+				"timestamp" : position.timestamp
+			}),
+  			contentType:"application/json; charset=utf-8",
+  			success: function(){
+    				console.log("envoyé");
+  			}
+		});*/
 
 			$("#startTracking_debug").html(
 				'Latitude: '          + Math.round(position.coords.latitude * 10000000)/ 10000000 + '</br>' +
@@ -471,16 +531,22 @@ $(document).ready( function() {
 	}
 
 	function insertTrack(tx){
-		var baseDate = startDate.getDate().toString() + "/"+ (startDate.getMonth()+1).toString() + "/"+startDate.getFullYear().toString()+" "+startDate.getHours().toString()+":"+(startDate.getMinutes()<10?'0':'') + startDate.getMinutes();
-		tx.executeSql('INSERT INTO tracks (timestamp, date, data, acc) VALUES (?,?,?,?)', [ startDate.getTime(), baseDate,JSON.stringify(tracking_data), JSON.stringify(tracking_ac) ], successInsert, errorInsert);
+		if (tracking_data.length > 1){ // Si la trace contient au moins un point... Sauvegarder.
+			var baseDate = startDate.getDate().toString() + "/"+ (startDate.getMonth()+1).toString() + "/"+startDate.getFullYear().toString()+" "+startDate.getHours().toString()+":"+(startDate.getMinutes()<10?'0':'') + startDate.getMinutes();
+			tx.executeSql('INSERT INTO tracks (timestamp, date, data) VALUES (?,?,?)', [ startDate.getTime(), baseDate,JSON.stringify(tracking_data) ], successInsert, errorInsert);
+		}// Sinon...
+		else{
+			successInsert(false);
+		}
+		trackRequest = false;
 	}
 	
 	function errorInsert(err){
 		alert("Problème à l'insertion de la trace : " +err.code);
 	}
 
-	function successInsert(){
-		navigator.accelerometer.clearWatch(watch_ac); // Clear accelerometer
+	function successInsert(tx){
+		// navigator.accelerometer.clearWatch(watch_ac); // Clear accelerometer
 		navigator.geolocation.clearWatch(watch_id); // Clear geolocation.
 		$("#startTracking_start").closest('.ui-btn').show();
 		$("#startTracking_stop").closest('.ui-btn').hide();
@@ -493,10 +559,15 @@ $(document).ready( function() {
 			track = false;
 		}
 		watch_id = null;			
-		watch_ac = null;
+		// watch_ac = null;
 		tracking_data = [];
-		tracking_ac = [];
-		alert('La trace a bien été insérée');
+		// tracking_ac = [];
+		if (tx == false){
+			alert("la trace ne comporte aucun point et n'a pas été enregistrée.");
+		}
+		else{
+			alert('La trace a bien été insérée');
+		}
 	}
 
 	function vibrate(tps){
