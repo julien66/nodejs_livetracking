@@ -55,9 +55,9 @@ $(document).ready( function() {
 	// Listen to the battery !!
 	window.addEventListener("batterystatus", onBatteryStatus, false);
 	function onBatteryStatus(info) { // Handle the battery low event
-		console.log(info.level);
+		//console.log(info.level);
 		if (info.isPlugged == false && info.level < 20){
-			if (trackRequested == true){
+			if (trackRequest == true){
 				stopTracking();
 				vibrate(500);
 				navigator.notification.confirm(
@@ -89,7 +89,7 @@ $(document).ready( function() {
 		    return connection;
 	}
 
-	if ( checkConnection() != 'Connection.NONE'){
+	if ( checkConnection() != 'Connection.NONE'){ // A l'allumage si le téléphone est connecté. Lance l'événement de connection.
 		onOnline();
 	};
 
@@ -174,7 +174,7 @@ $(document).ready( function() {
 			'Voulez-vous vraiment effacer TOUTES les traces ?',
 			clearAll,
 			'Attention',
-			'oui,non'
+			Array('oui','non')
 		);
 	});
 
@@ -407,7 +407,7 @@ $(document).ready( function() {
 					}
 				 }, // callback
 				 'Attention', // title
-				 Array('OUI, NON') // buttonsName
+				 Array('OUI', 'NON') // buttonsName
 			);
 		}
 		else {						
@@ -428,7 +428,7 @@ $(document).ready( function() {
 				}
 			}, // callabck
 			'Attention',
-			Array('OUI, NON')
+			Array('OUI', 'NON')
 			);		
 	});
 		

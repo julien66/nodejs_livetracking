@@ -1,6 +1,6 @@
 package com.ffvl.geoloc;
 
-import org.apache.cordova.DroidGap;
+import org.apache.cordova.*;
 import android.os.Bundle;
 
 public class GeolocActivity extends DroidGap {
