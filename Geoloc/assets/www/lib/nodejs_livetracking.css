@@ -1,0 +1,29 @@
+/** @css file by Julien Garcia **/
+body {
+  text-align: justify;
+}
+
+.ui-page { 
+  background: #222222 !important;
+}
+
+.logo{
+ float: left;
+ margin: 5px 10px 5px 0px;
+}
+
+#startTracking_status {
+  font-weight: bold;
+}
+
+#idTrack {
+  color: #ffcc33;
+}
+
+#throbber {
+  display: none;
+}
+
+.hidden {
+  display: none;
+}

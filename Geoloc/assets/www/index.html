@@ -4,19 +4,21 @@
 
 <head> 
 <title>FFVL Géoloc</title> 
-<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
-<script type="text/javascript" charset="utf-8" src="cordova-2.6.0.js"></script> 
-<!-- <script type="text/javascript" src="websocket.js"> </script> -->
-<script type='text/javascript' src='lib/jquery-1.8.3.min.js'></script>
-<script type='text/javascript' src='lib/jquery.mobile-1.2.0/jquery.mobile-1.2.0.js'></script>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1"/>
 <script type='text/javascript' src='lib/json2.js'></script>
+<script type='text/javascript' src='lib/jquery-1.10.2.min.js'></script>
+<script type='text/javascript' src='lib/jquery.mobile-1.3.1/jquery.mobile-1.3.1.min.js'></script>
+<script type='text/javascript' charset='utf-8' src="lib/helper.js"></script>
+<script type='text/javascript' charset='utf-8' src="lib/param.js"></script>
+<script type='text/javascript' charset='utf-8' src="lib/databaseCallback.js"></script>
+<script type='text/javascript' charset='utf-8' src="lib/database.js"></script>
+<script type='text/javascript' charset='utf-8' src="lib/connection.js"></script>
+<script type='text/javascript' charset='utf-8' src="lib/tracker.js"></script>
+<script type='text/javascript' charset='utf-8' src="lib/battery.js"></script>
 <script type='text/javascript' charset='utf-8' src='lib/starter.js'></script>
-<!-- <script type='text/javascript' src='http://maps.googleapis.com/maps/api/js?key=AIzaSyD0j7HUREhDcBlyvPwkLD8ICsfelgoLSIE&sensor=false'></script> -->
-<!-- <script type='text/javascript' src='http://91.121.133.40:4321/socket.io/socket.io.js'></script> -->
-<link rel='stylesheet' type='text/css' href='lib/ffvl.css' />
-
-<!-- <link href="http://code.google.com/apis/maps/documentation/javascript/examples/default.css" rel="stylesheet" type="text/css" /> -->
-<link rel='stylesheet' type='text/css' href='lib/jquery.mobile-1.2.0/jquery.mobile-1.2.0.css' />
+<script type="text/javascript" charset="utf-8" src="cordova.js"></script>
+<link rel='stylesheet' type='text/css' href='lib/nodejs_livetracking.css'/>
+<link rel='stylesheet' type='text/css' href='lib/jquery.mobile-1.3.1/jquery.mobile-1.3.1.min.css' />
 </head> 
 
 <body>
@@ -24,27 +26,38 @@
 <!-- Home page ! -->
 <div data-role="page" id="accueil">
   <div data-role="header">
-    <h1>Accueil</h1>
+    <h1>Settings</h1>
     <div data-role="navbar">
       <ul>
-        <li><a class="ui-btn-active  ui-state-persist" href="#accueil" data-transition="none" data-icon="home">Accueil</a></li>
-        <li><a href="#startTracking" data-transition="none" data-icon="plus">Track</a></li>
-        <li><a href="#history" data-transition="none" data-icon="star">Historique</a></li>
+        <li><a class="ui-btn-active  ui-state-persist" href="#accueil" data-transition="none" data-icon="gear">Settings</a></li>
+        <li><a href="#startTracking" data-transition="none" data-icon="search">Track</a></li>
+        <li><a href="#history" data-transition="none" data-icon="star">History</a></li>
       </ul>
     </div> <!-- Navbar -->
   </div> <!-- Header -->
-
-  <div data-role="content">
-     <span class="logo"><img style='width:100px;' alt='logo' src='lib/logo.png'></span><h4>Bienvenue sur l'appli de géolocalisation en temps réel de la Fédération Française de Vol Libre. </h4><br/>
-     <b>Votre identifiant trackeur est le : <span id="idTrack"> </span></b>. Cet identifiant doit être renseigné dans votre compte personnel sur le site <a id="geosite" href="#" rel="http://geolocalisation.ffvl.fr"> geolocalisation.ffvl.fr</a>
-  </div>
-  
-   <div data-role="footer" data-position="fixed" class="ui-bar" data-id="statebar">
-	<a class="internet" href="#" data-role="button" data-theme="e" data-icon="delete">Internet</a>
-	<a class="isTracking" href="#" data-role="button" data-theme="e" data-icon="delete">Tracking</a>
-	<a class="ffvl" href="#" data-role="button" data-theme="e" data-icon="delete">FFVL</a>
-  </div>
-  
+  <div data-role="content" data-theme="a">
+      <div id="explain">
+        <span class="logo"><img style='width:39px;' alt='logo' src='lib/logo.png'></span>
+        <h4>Welcome on Drupal tracking App ! This application works perfect with the Drupal module nodejs livetracking.</h4>
+        <p><b>Your tracker identifier is : <span id="idTrack"></span></b>. This identifier must be provided on your personnal tracking page.</p><br/>
+        <button id="livetracking_setting" data-theme="a">Livetracking setting</button>      
+      </div>
+      <div id="setting" class="hidden">
+        <button id="close_setting" data-theme="a">Close this setting</button>
+        <div data-role="fieldcontain">
+          <label for="website">Server name or IP :</label>
+          <input class='setting-input' type="text" name="website" id="website" value="http://www.your_website.com"/>
+        </div>
+        <div data-role="fieldcontain">
+          <label for="port">Port :</label>
+          <input class='setting-input' type="number" name="port" id="port" value="8080"/>
+        </div>
+      </div>
+    </div>
+  <div data-role="footer" data-position="fixed" class="ui-bar" data-id="statebar">
+    <a class="internet" href="#" data-role="button" data-theme="e" data-icon="delete">Internet</a>
+    <a class="isTracking" href="#" data-role="button" data-theme="e" data-icon="delete">Tracking</a>
+	</div>
 </div> <!-- Page -->
 
 <!-- Traking page ! -->
@@ -53,37 +66,22 @@
     <h1>Track</h1>
     <div data-role="navbar">
       <ul>
-        <li><a href="#accueil" data-transition="none" data-icon="home">Accueil</a></li>
-        <li><a class="ui-btn-active  ui-state-persist" href="#startTracking" data-transition="none" data-icon="plus">Track</a></li>
-        <li><a href="#history" data-transition="none" data-icon="star">Historique</a></li>
+        <li><a href="#accueil" data-transition="none" data-icon="gear">Settings</a></li>
+        <li><a class="ui-btn-active  ui-state-persist" href="#startTracking" data-transition="none" data-icon="search">Track</a></li>
+        <li><a href="#history" data-transition="none" data-icon="star">History</a></li>
       </ul>
     </div>
   </div>
-
-  <div data-role="content">
+  <div data-role="content" data-theme="a">
     <p id="startTracking_status"></p>
-    <button data-role="button" id="startTracking_start" data-theme="e">Commencer le Tracking</button>
-    <button data-role="button" id="startTracking_stop" data-theme="b">Arrêter le Tracking</button>
-    <button data-role="button" id="startTracking_ghost" data-theme="b">Activer le mode fantôme</button>
-        <p id="startTracking_debug"></p>
-	<p id="startTacking_accelero"></p>
-
-  <!-- <div data-role="fieldcontain">
-	<label for="flip-secours">Appel à l'aide :</label>
-	<select name="slider" id="flip-secours" data-role="slider">
-		<option value="no">Non</option>
-		<option value="yes">Oui</option>
-	</select> 
-  </div> -->
-
+    <button data-role="button" id="startTracking_start" data-theme="e">Start Tracking</button>
+    <button data-role="button" id="startTracking_stop" data-theme="b">Stop Tracking</button>
+    <p id="startTracking_debug"></p>
   </div>
-  
   <div data-role="footer" data-position="fixed" class="ui-bar" data-id="statebar">
 	<a class="internet" href="#" data-role="button" data-theme="e" data-icon="delete">Internet</a>
 	<a class="isTracking" href="#" data-role="button" data-theme="e" data-icon="delete">Tracking</a>
-	<a class="ffvl" href="#" data-role="button" data-theme="e" data-icon="delete">FFVL</a>
-  </div>
-  	
+	</div>
 </div>
 
 <!-- History page ! -->
@@ -92,59 +90,46 @@
     <h1>Historique</h1>
     <div data-role="navbar">
       <ul>
-        <li><a href="#accueil" data-transition="none" data-icon="home">Accueil</a></li>
-        <li><a href="#startTracking" data-transition="none" data-icon="plus">Track</a></li>
-        <li><a class="ui-btn-active  ui-state-persist" href="#history" data-transition="none" data-icon="star">Historique</a></li>
+        <li><a href="#accueil" data-transition="none" data-icon="gear">Settings</a></li>
+        <li><a href="#startTracking" data-transition="none" data-icon="search">Track</a></li>
+        <li><a class="ui-btn-active  ui-state-persist" href="#history" data-transition="none" data-icon="star">History</a></li>
       </ul>
     </div>
   </div>
-
-  <div data-role="content">
-	<button id="home_clearstorage_button" data-theme="e">Effacer toutes les traces</button>
+  <div data-role="content" data-theme="a">
+	<button id="home_clearstorage_button" data-theme="e">Delete all tracks</button>
 	<p id="tracks_recorded"></p>
         <ol data-role="listview" id="history_tracklist">
         </ol>
   </div>
-  
   <div data-role="footer" data-position="fixed" class="ui-bar" data-id="statebar">
 	<a class="internet" href="#" data-role="button" data-theme="e" data-icon="delete">Internet</a>
 	<a class="isTracking" href="#" data-role="button" data-theme="e" data-icon="delete">Tracking</a>
-	<a class="ffvl" href="#" data-role="button" data-theme="e" data-icon="delete">FFVL</a>
-  </div>
+	</div>
   	
 </div>
 
 <!-- Detail page ! -->
 <div data-role="page" id="track_info">
   <div data-role="header">
-    <h1>Visualisation du vol</h1>
+    <h1>Tracklog</h1>
     <div data-role="navbar">
       <ul>
-        <li><a href="#accueil" data-transition="none" data-icon="home">Accueil</a></li>
-        <li><a href="#startTracking" data-transition="none" data-icon="plus">Track</a></li>
-        <li><a class="ui-btn-active  ui-state-persist" href="#history" data-transition="none" data-icon="star">Historique</a></li>
+        <li><a href="#accueil" data-transition="none" data-icon="gear">Settings</a></li>
+        <li><a href="#startTracking" data-transition="none" data-icon="search">Track</a></li>
+        <li><a class="ui-btn-active  ui-state-persist" href="#history" data-transition="none" data-icon="star">History</a></li>
       </ul>
     </div>
   </div>
-  <div data-role="content">
+  <div data-role="content" data-theme="a">
     <p id="track_info_info"></p>
     <!-- id="map_canvas" style="position:absolute;top:80;left:0;width:100%;height:300px;"></div>-->
-    <button data-role="button" id="deleteIt" data-theme="e" data-icon="alert"> Effacer </button>
-    <button data-role="button" id="sendIt" data-theme="e" data-icon="arrow-r"> Envoyer </button>
-    <p id="throbber"> <img alt="throbber" src="lib/throbber.gif"/> &nbsp; Merci de patienter et de garder la meilleure connection possible, la trace est en train d'être acheminée jusqu'au serveur FFVL. </p>
-  
-    
+    <button data-role="button" id="deleteIt" data-theme="e" data-icon="alert"> Delete </button>
   </div>
-
  <div data-role="footer" data-position="fixed" class="ui-bar" data-id="statebar">
 	<a class="internet" href="#" data-role="button" data-theme="e" data-icon="delete">Internet</a>
 	<a class="isTracking" href="#" data-role="button" data-theme="e" data-icon="delete">Tracking</a>
-	<a class="ffvl" href="#" data-role="button" data-theme="e" data-icon="delete">FFVL</a>
-	<!-- <a id="deleteIt" href="#" data-role="button" data-theme="e" data-icon="trash">Effacer</a>
-	<a id="sendIt" class="send" href="#" data-role="button" data-theme="e" data-icon="email">Envoyer</a> -->
-  </div>
-
+	</div>
 </div>
 </body>
- 
  </html>
