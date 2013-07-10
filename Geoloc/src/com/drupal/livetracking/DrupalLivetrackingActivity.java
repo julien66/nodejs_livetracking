@@ -1,9 +1,9 @@
-package com.ffvl.geoloc;
+package com.drupal.livetracking;
 
 import org.apache.cordova.*;
 import android.os.Bundle;
 
-public class GeolocActivity extends DroidGap {
+public class DrupalLivetrackingActivity extends DroidGap {
     /** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState) {

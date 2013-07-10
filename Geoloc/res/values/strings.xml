@@ -2,6 +2,6 @@
 <resources>
 
     <string name="hello">Hello World, GeolocActivity!</string>
-    <string name="app_name">Geoloc</string>
+    <string name="app_name">Drupal Livetracking</string>
 
 </resources>
