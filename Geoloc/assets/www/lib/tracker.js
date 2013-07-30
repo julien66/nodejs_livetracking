@@ -14,6 +14,10 @@ var trackRequest = false;
 var track = false;
 // Minimal capture accuracy.
 var minAccuracy = 100;
+var t;
+var outTime = 10000;
+
+//navigator.geolocation.getCurrentPosition(onSuccess, onError);
 
 var tracker = {
   startTracking : function() {
@@ -22,8 +26,9 @@ var tracker = {
       $("#startTracking_start").closest('.ui-btn').hide();
       $("#startTracking_stop").closest('.ui-btn').show();
       $("#startTracking_status").html("Recherche GPS.");
-      watch_id = navigator.geolocation.watchPosition(getPoint, onError, { timeout: 5000, maximumAge: 0,enableHighAccuracy: true });
+      watch_id = navigator.geolocation.watchPosition(getPoint, onError, { timeout: 5000, maximumAge: 500,enableHighAccuracy: true });
       trackRequest = true;
+      createTimeout();
     }
   },
 
@@ -37,6 +42,16 @@ var tracker = {
     }
     trackRequest = false;
   },  
+}
+
+/**
+ * Create a timeout that request a getCurrentPosition if none is sent during 
+ * x seconds. 
+ */
+function createTimeout() {
+  t = setTimeout(function() {
+        navigator.geolocation.getCurrentPosition(getPoint, onError, {enableHighAccuracy: true });
+      }, outTime);
 }
 
 /**
@@ -105,6 +120,9 @@ function getPoint(position) {
 	    'Vitesse: ' + speed + ' Km/h </br>'
 	  );
 	}
+	
+	clearTimeout(t);
+  createTimeout();
 }
 
 /**
@@ -118,11 +136,14 @@ function onError(error) {
     track = false;
   }
   $("#startTracking_status").html(tracking_data.length + " point(s) have been recorded. Tracking fails during the last try. Check your GPS");
+  clearTimeout(t);
+  createTimeout();
 }
 
 // Success handler for track insert.
 function successInsert(bool) {
   // Clear geolocation.
+  clearTimeout(t);
   navigator.geolocation.clearWatch(watch_id);
   $("#startTracking_start").closest('.ui-btn').show();
   $("#startTracking_stop").closest('.ui-btn').hide();
