@@ -85,14 +85,14 @@ function getPoint(position) {
 		var speed = Math.round(position.coords.speed * 3.6 * 100) /100;
 		var accuracy = Math.round(position.coords.accuracy);
 		vario = Math.round(vario * 100) /100;
+		if (!vario) {vario = 0;}
 		var url = website + ":" + port;
 		if (debug == true) {
 		  console.log("Preparing to send at : " + url);
 		}
 		$.ajax({
-		  url: url,
-		  type:"POST",
-		  data: JSON.stringify({
+		  url: url + "?" + "leolive=1" + "&user=" + login + "&pass=" + password + "&client=Drupal_livetracking" + "&uuid=uuid-" + device.uuid + "&lat=" + lat + "&lon=" + lon + "&alt=" + altitude + "&sog=" + speed + "&precision=" + accuracy + "&vario=" + vario + "&tm=" + position.timestamp,
+		  /*data: JSON.stringify({
 		    "uuid" : 'uuid-'+device.uuid,
 		    "lat" : lat,
 		    "lon" : lon,
@@ -102,7 +102,7 @@ function getPoint(position) {
 		    "vario" : vario,
 		    "timestamp" : position.timestamp
 		   }),
-		   contentType:"application/json; charset=utf-8",
+		   contentType:"application/json; charset=utf-8",*/
 		   success: function() {
 		    if(debug == true) {
 		      console.log("envoyé");

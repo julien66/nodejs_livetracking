@@ -35,7 +35,7 @@ $(document).ready(function() {
 		};
 		
 		// Display this device uuid.
-		$('#idTrack').html(device.uuid);
+		//$('#idTrack').html(device.uuid);
 
     // Showing settings.
     $("#livetracking_setting").click(function() {

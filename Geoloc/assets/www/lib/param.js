@@ -10,13 +10,18 @@ var batTreshod = 20;
 var website;
 // Server port.
 var port;
-
+// Server login.
+var login;
+// Server password.
+var password;
 var debug = true;
 
 var defaultSetting = {
   'batTreshold' : 20,
   'website' : 'http://watch_setting_page',
   'port' : 8080,
+  'login' : 'Your_username',
+  'password' : 'Your_password'
 }
 
 var param = {
@@ -36,7 +41,7 @@ var param = {
 
 function assignValueToKey(key, value) {
   // This handle problems when evaluate a string that contain : or . characters
-  if (key == 'website') {
+  if (key == 'website' || 'login' || 'password') {
     eval( key + " = " + "'" + value + "'");
   }
   else {

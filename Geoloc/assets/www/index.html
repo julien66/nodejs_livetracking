@@ -39,7 +39,6 @@
       <div id="explain">
         <span class="logo"><img style='width:39px;' alt='logo' src='lib/logo.png'></span>
         <h4>Welcome on Drupal tracking App ! This application works perfect with the Drupal module nodejs livetracking.</h4>
-        <p><b>Your tracker identifier is : <span id="idTrack"></span></b>. This identifier must be provided on your personnal tracking page.</p><br/>
         <button id="livetracking_setting" data-theme="a">Livetracking setting</button>      
       </div>
       <div id="setting" class="hidden">
@@ -51,6 +50,14 @@
         <div data-role="fieldcontain">
           <label for="port">Port :</label>
           <input class='setting-input' type="number" name="port" id="port" value="8080"/>
+        </div>
+        <div data-role="fieldcontain">
+          <label for="login">Login :</label>
+          <input class='setting-input' type="text" name="login" id="login" value="Your_username"/>
+        </div>
+        <div data-role="fieldcontain">
+          <label for="password">Password :</label>
+          <input class='setting-input' type="text" name="password" id="password" value="Your_password"/>
         </div>
       </div>
     </div>
