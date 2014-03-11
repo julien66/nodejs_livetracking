@@ -1,10 +1,13 @@
 /** @css file by Julien Garcia **/
 body {
   text-align: justify;
+  background: #222222 !important;
 }
 
 .ui-page { 
   background: #222222 !important;
+  overflow: hidden;
+  position:fixed;
 }
 
 .logo{

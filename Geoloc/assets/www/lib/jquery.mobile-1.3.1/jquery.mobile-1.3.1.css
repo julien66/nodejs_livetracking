@@ -2013,7 +2013,7 @@ div.ui-mobile-viewport { overflow-x: hidden; }
 .ui-footer .ui-navbar li .ui-btn { border-top-width: 0; border-bottom-width: 0; }
 /* fixing gaps caused by subpixel problem */
 .ui-header .ui-navbar .ui-grid-b li.ui-block-c .ui-btn,
-.ui-footer .ui-navbar .ui-grid-b li.ui-block-c .ui-btn { margin-right: -5px; }
+.ui-footer .ui-navbar .ui-grid-b li.ui-block-c .ui-btn { margin-right: 0px; }
 .ui-header .ui-navbar .ui-grid-c li.ui-block-d .ui-btn,
 .ui-footer .ui-navbar .ui-grid-c li.ui-block-d .ui-btn,
 .ui-header .ui-navbar .ui-grid-d li.ui-block-e .ui-btn,

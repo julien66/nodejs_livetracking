@@ -13,15 +13,15 @@ var battery = {
 }
 
 function onBatteryStatus(info) {
-  if (info.isPlugged == false && info.level < 20){
+  if (info.isPlugged == false && info.level < batThreshold) {
     if (trackRequest == true) {
       tracker.stopTracking();
       helper.vibrate(500);
       navigator.notification.confirm(
-      "Battery is ow low and the tracking has been stop to save some energy !",
-      vibrate(500),
-      'Warning',
-      'OK'
+        "Battery is ow low and the tracking has been stop to save some energy !",
+        vibrate(500),
+        'Warning',
+        'OK'
       );
     }
     lowBat = true;

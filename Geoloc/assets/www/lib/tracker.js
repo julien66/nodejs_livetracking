@@ -26,7 +26,7 @@ var tracker = {
       $("#startTracking_start").closest('.ui-btn').hide();
       $("#startTracking_stop").closest('.ui-btn').show();
       $("#startTracking_status").html("Recherche GPS.");
-      watch_id = navigator.geolocation.watchPosition(getPoint, onError, { timeout: 5000, maximumAge: 500,enableHighAccuracy: true });
+      watch_id = navigator.geolocation.watchPosition(getPoint, onError, {timeout: 5000, maximumAge: 500, enableHighAccuracy: true });
       trackRequest = true;
       createTimeout();
     }
@@ -50,8 +50,8 @@ var tracker = {
  */
 function createTimeout() {
   t = setTimeout(function() {
-        navigator.geolocation.getCurrentPosition(getPoint, onError, {enableHighAccuracy: true });
-      }, outTime);
+    navigator.geolocation.getCurrentPosition(getPoint, onError, {enableHighAccuracy: true });
+  }, outTime);
 }
 
 /**

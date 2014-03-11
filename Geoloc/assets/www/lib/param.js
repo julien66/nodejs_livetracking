@@ -5,7 +5,7 @@
  */
  
 // Batterie threshold.
-var batTreshod = 20;
+var batThreshold;
 // Website where the info is sent.
 var website;
 // Server port.
@@ -17,7 +17,7 @@ var password;
 var debug = true;
 
 var defaultSetting = {
-  'batTreshold' : 20,
+  'batThreshold' : 20,
   'website' : 'http://watch_setting_page',
   'port' : 8080,
   'login' : 'Your_username',
@@ -29,9 +29,11 @@ var param = {
     for (var key in defaultSetting) {
       var value = window.localStorage.getItem(key);
       if (value == null) {
+        console.log(key);
         assignValueToKey(key, defaultSetting[key]);
       }
       else {
+        console.log(key);
         assignValueToKey(key, value);
         $("#"+key).attr('value', value); 
       }
